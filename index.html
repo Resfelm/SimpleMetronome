@@ -77,27 +77,67 @@
     }
 
     /* Rows share the console height in these proportions */
-    .row-beats { flex: 0.7 1 0; }
-    .row-bpm   { flex: 2.2 1 0; }
-    .row-mid   { flex: 2.5 1 0; }
-    .row-timer { flex: 2.1 1 0; }
-    .row-play  { flex: 1.0 1 0; display: flex; }
+    .row-beats { flex: 1.3 1 0; }
+    .row-bpm   { flex: 2.0 1 0; }
+    .row-mid   { flex: 2.3 1 0; }
+    .row-timer { flex: 2.0 1 0; }
+    .row-play  { flex: 0.9 1 0; display: flex; }
 
     /* ---------- Scalable text ---------- */
     .lbl    { font-size: max(9px, calc(var(--u) * 1.7)); line-height: 1; }
     .lbl-xs { font-size: max(8px, calc(var(--u) * 1.4)); line-height: 1; }
 
     /* ---------- Row 1: beat strip ---------- */
-    .row-beats { padding: 0 calc(var(--u) * 1.8); gap: var(--u); }
+    .row-beats { padding: calc(var(--u) * 1) calc(var(--u) * 1.6); gap: calc(var(--u) * 0.8); }
+    .beat-header { gap: var(--u); }
+    .accent-reset { padding: 0.4em 0.8em; }
     .beat-side { gap: calc(var(--u) * 1); }
     .pulse-dot { width: max(8px, calc(var(--u) * 1.3)); height: max(8px, calc(var(--u) * 1.3)); }
     .meter-badge { font-size: max(11px, calc(var(--u) * 2)); padding: 0.2em 0.45em; line-height: 1.1; }
     .install-btn { padding: 0.45em 0.9em; }
-    .beat-lights { gap: max(4px, calc(var(--u) * 0.8)); }
-    .beat-node { width: var(--b); height: var(--b); font-size: calc(var(--b) * 0.42); }
-    .beat-l { --b: max(24px, calc(var(--u) * 5.2)); }
-    .beat-m { --b: max(20px, calc(var(--u) * 4.2)); }
-    .beat-s { --b: max(16px, calc(var(--u) * 3.3)); }
+    /* Beat circles: up to 8 in one row, 9–16 in two even rows. JS sets --cols / --rows.
+       Circle size --b is the largest that fits the strip's width and height. */
+    .beat-lights {
+      --cols: 4;
+      --rows: 1;
+      --gap: max(4px, calc(var(--u) * 0.9));
+      --b: max(24px, min(
+        calc(var(--u) * 7),
+        calc(var(--v) * 9.6 / var(--rows)),
+        calc((100cqw - 10px - var(--u) * 3.2 - (var(--cols) - 1) * var(--gap)) / var(--cols))
+      ));
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;   /* a shorter second row (e.g. 9 = 5 + 4) stays centred */
+      align-content: center;
+      gap: var(--gap);
+      width: calc(var(--cols) * var(--b) + (var(--cols) - 1) * var(--gap) + 1px);
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    .beat-lights.one-row { column-gap: calc(var(--gap) * 1.8); width: auto; }
+    .beat-node { flex: 0 0 auto; }
+    .beat-node {
+      width: var(--b);
+      height: var(--b);
+      padding: 0;
+      border-radius: 9999px;
+      border: 2px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: calc(var(--b) * 0.4);
+      line-height: 1;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Beat kinds: normal (low click, green flash), accent (high click, amber flash), silent */
+    .beat-node.is-normal { background-color: #0f172a; border-color: #334155; color: #94a3b8; }
+    .beat-node.is-accent { background-color: rgba(245, 158, 11, 0.16); border-color: #f59e0b; color: #fbbf24; }
+    .beat-node.is-mute   { background-color: transparent; border-style: dashed; border-color: #334155; color: #475569; }
+    .beat-node:focus-visible { outline: 2px solid #94a3b8; outline-offset: 2px; }
 
     /* ---------- Row 2: BPM ---------- */
     .row-bpm { padding: calc(var(--u) * 1.2); gap: calc(var(--u) * 1); }
@@ -215,6 +255,11 @@
       box-shadow: 0 0 12px rgba(16, 185, 129, 0.85);
       transform: scale(1.12);
     }
+    .beat-mute-active {
+      border-color: #94a3b8 !important;
+      color: #e2e8f0 !important;
+      transform: scale(1.06);
+    }
 
     /* Console border pulse on beat (strength follows the brightness slider) */
     .panel-flash-accent {
@@ -243,7 +288,7 @@
   </style>
   <!-- Tailwind CSS v3.4.17, pre-generated from the classes this page uses (no CDN, works offline).
        If you add new Tailwind classes, the file needs regenerating. -->
-  <link rel="stylesheet" href="tailwind.css?v=7">
+  <link rel="stylesheet" href="tailwind.css?v=9">
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans">
 
@@ -254,22 +299,33 @@
     <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-emerald-500 to-cyan-500 opacity-85"></div>
 
     <!-- ROW 1: Visual Beat Indicator Strip -->
-    <section aria-label="Beat Indicator" class="row-beats bg-slate-950 border border-slate-800/90 rounded-xl flex items-center justify-between">
-      <div class="beat-side flex items-center shrink-0">
-        <div id="headerPulseDot" class="pulse-dot rounded-full bg-slate-700 transition-all duration-75"></div>
-        <span id="tempoMarking" class="lbl font-bold uppercase tracking-wider text-amber-400/90">120 BPM</span>
+    <section aria-label="Beat Indicator" class="row-beats bg-slate-950 border border-slate-800/90 rounded-xl flex flex-col">
+      <!-- Header: tempo name · accent hint / reset · meter -->
+      <div class="beat-header flex items-center justify-between">
+        <div class="beat-side flex items-center shrink-0">
+          <div id="headerPulseDot" class="pulse-dot rounded-full bg-slate-700 transition-all duration-75"></div>
+          <span id="tempoMarking" class="lbl font-bold uppercase tracking-wider text-amber-400/90">120 BPM</span>
+        </div>
+
+        <div class="flex-1 min-w-0 flex items-center justify-center">
+          <span id="accentHint" class="lbl-xs uppercase tracking-wider text-slate-500 truncate">Tap beats to accent</span>
+          <button id="accentResetBtn" type="button" style="display: none;" title="Back to the default accent on beat 1"
+            class="accent-reset lbl-xs rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-bold uppercase tracking-wider hover:bg-slate-800">
+            Reset accents
+          </button>
+        </div>
+
+        <div class="beat-side flex items-center shrink-0">
+          <button id="install-btn" style="display: none;" class="install-btn lbl rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold uppercase tracking-wider hover:bg-emerald-500/30 active:scale-95 transition">
+            Install App
+          </button>
+          <span id="headerMeterBadge" class="meter-badge font-mono font-bold text-emerald-400 bg-slate-900 border border-slate-800 rounded shrink-0">4/4</span>
+        </div>
       </div>
 
-      <!-- Dynamic Row of Beat Lights -->
-      <div id="beatLightsContainer" class="beat-lights flex flex-wrap items-center justify-center flex-1">
+      <!-- Beat circles: tap one to cycle normal → accent → silent -->
+      <div id="beatLightsContainer" class="beat-lights flex-1" role="group" aria-label="Beats. Tap a beat to cycle normal, accent, silent.">
         <!-- Populated by JS -->
-      </div>
-
-      <div class="beat-side flex items-center shrink-0">
-        <button id="install-btn" style="display: none;" class="install-btn lbl rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold uppercase tracking-wider hover:bg-emerald-500/30 active:scale-95 transition">
-          Install App
-        </button>
-        <span id="headerMeterBadge" class="meter-badge font-mono font-bold text-emerald-400 bg-slate-900 border border-slate-800 rounded shrink-0">4/4</span>
       </div>
     </section>
 
@@ -575,6 +631,9 @@
         timerID: null,
         visualQueue: [],
         // Practice Countdown Timer State
+        // Custom accent patterns, one per beats-per-measure, e.g. { 7: 'anananm' }
+        // a = accent, n = normal, m = silent. Only non-default patterns are stored.
+        accentPatterns: {},
         timerPresetSec: 5 * 60,   // the time the timer resets to
         timerRemainingSec: 5 * 60,
         timerRunning: false,
@@ -596,6 +655,8 @@
       const tempoMarking = document.getElementById('tempoMarking');
       const headerMeterBadge = document.getElementById('headerMeterBadge');
       const beatLightsContainer = document.getElementById('beatLightsContainer');
+      const accentHint = document.getElementById('accentHint');
+      const accentResetBtn = document.getElementById('accentResetBtn');
 
       // BPM elements
       const bpmDisplay = document.getElementById('bpmDisplay');
@@ -682,26 +743,79 @@
         renderBeatLights();
       }
 
-      function renderBeatLights() {
-        beatLightsContainer.innerHTML = '';
-        for (let i = 0; i < state.beatsPerMeasure; i++) {
-          const isAccent = i === 0;
-          const node = document.createElement('div');
-          node.dataset.beatIndex = i;
-          const sizeClasses = state.beatsPerMeasure > 10
-            ? 'beat-s'
-            : state.beatsPerMeasure > 6
-              ? 'beat-m'
-              : 'beat-l';
+      // --- Custom accents ---
+      const BEAT_KIND_CLASS = { a: 'is-accent', n: 'is-normal', m: 'is-mute' };
+      const BEAT_KIND_NAME = { a: 'accent', n: 'normal', m: 'silent' };
+      const NEXT_BEAT_KIND = { n: 'a', a: 'm', m: 'n' };  // tap cycle: normal → accent → silent
 
-          node.className = `beat-node ${sizeClasses} rounded-full border flex items-center justify-center font-mono font-bold ${
-            isAccent
-              ? 'bg-slate-900 border-amber-500/50 text-amber-400'
-              : 'bg-slate-900 border-slate-700 text-slate-400'
-          }`;
+      function defaultPattern(n) {
+        return 'a' + 'n'.repeat(n - 1);
+      }
+
+      function currentPattern() {
+        const n = state.beatsPerMeasure;
+        const saved = state.accentPatterns[n];
+        return (typeof saved === 'string' && saved.length === n) ? saved : defaultPattern(n);
+      }
+
+      function beatKind(i) {
+        return currentPattern()[i] || 'n';
+      }
+
+      function styleBeatNode(node, i, kind) {
+        node.className = `beat-node ${BEAT_KIND_CLASS[kind]}`;
+        node.setAttribute('aria-label', `Beat ${i + 1}: ${BEAT_KIND_NAME[kind]}`);
+      }
+
+      function renderBeatLights() {
+        const n = state.beatsPerMeasure;
+        const rows = n <= 8 ? 1 : 2;
+        const cols = rows === 1 ? n : Math.ceil(n / 2);
+        beatLightsContainer.style.setProperty('--cols', cols);
+        beatLightsContainer.style.setProperty('--rows', rows);
+        beatLightsContainer.classList.toggle('one-row', rows === 1);
+
+        const pattern = currentPattern();
+        beatLightsContainer.innerHTML = '';
+        for (let i = 0; i < n; i++) {
+          const node = document.createElement('button');
+          node.type = 'button';
+          node.dataset.beatIndex = i;
           node.textContent = i + 1;
+          styleBeatNode(node, i, pattern[i]);
           beatLightsContainer.appendChild(node);
         }
+        updateAccentHint();
+      }
+
+      function updateAccentHint() {
+        const custom = currentPattern() !== defaultPattern(state.beatsPerMeasure);
+        accentHint.style.display = custom ? 'none' : '';
+        accentResetBtn.style.display = custom ? '' : 'none';
+      }
+
+      function setPattern(pattern) {
+        const n = state.beatsPerMeasure;
+        if (pattern === defaultPattern(n)) {
+          delete state.accentPatterns[n];
+        } else {
+          state.accentPatterns[n] = pattern;
+        }
+        saveSettings();
+      }
+
+      function cycleBeat(i) {
+        const pattern = currentPattern().split('');
+        pattern[i] = NEXT_BEAT_KIND[pattern[i]] || 'n';
+        setPattern(pattern.join(''));
+        const node = beatLightsContainer.children[i];
+        if (node) styleBeatNode(node, i, pattern[i]);
+        updateAccentHint();
+      }
+
+      function resetAccents() {
+        setPattern(defaultPattern(state.beatsPerMeasure));
+        renderBeatLights();
       }
 
       const SPEAKER_PATH = '<path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />';
@@ -1016,11 +1130,11 @@
         volumeGainNode.gain.setTargetAtTime(volumeToGain(state.volume), audioCtx.currentTime, 0.015);
       }
 
-      function scheduleClickSound(beatIndex, time) {
-        if (state.volume <= 0) return;
+      function scheduleClickSound(kind, time) {
+        if (state.volume <= 0 || kind === 'm') return;
 
         const peakGain = CLICK_DRIVE;
-        const isAccent = beatIndex === 0;
+        const isAccent = kind === 'a';
         const osc = audioCtx.createOscillator();
         const transientOsc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
@@ -1064,8 +1178,9 @@
       }
 
       function scheduleNote(beatIndex, time) {
-        scheduleClickSound(beatIndex, time);
-        state.visualQueue.push({ beat: beatIndex, time: time });
+        const kind = beatKind(beatIndex);
+        scheduleClickSound(kind, time);
+        state.visualQueue.push({ beat: beatIndex, kind: kind, time: time });
       }
 
       function scheduler() {
@@ -1078,7 +1193,7 @@
       function clearBeatVisuals() {
         const nodes = beatLightsContainer.children;
         for (let i = 0; i < nodes.length; i++) {
-          nodes[i].classList.remove('beat-accent-active', 'beat-regular-active');
+          nodes[i].classList.remove('beat-accent-active', 'beat-regular-active', 'beat-mute-active');
         }
         metronomeConsole.classList.remove('panel-flash-accent', 'panel-flash-regular');
       }
@@ -1098,28 +1213,34 @@
         );
       }
 
-      function triggerBeatVisual(beatIndex) {
+      function triggerBeatVisual(beatIndex, kind) {
         clearBeatVisuals();
 
         const nodes = beatLightsContainer.children;
         const targetNode = nodes[beatIndex];
-        const isAccent = beatIndex === 0;
+        const isAccent = kind === 'a';
+        const isSilent = kind === 'm';
 
         if (targetNode) {
-          targetNode.classList.add(isAccent ? 'beat-accent-active' : 'beat-regular-active');
+          targetNode.classList.add(isSilent ? 'beat-mute-active' : isAccent ? 'beat-accent-active' : 'beat-regular-active');
         }
 
-        flashConsole(isAccent);
-        if (state.brightness > 0) {
-          metronomeConsole.classList.add(isAccent ? 'panel-flash-accent' : 'panel-flash-regular');
+        // Silent beats: only the beat circle shows where you are; no flash, no click
+        if (!isSilent) {
+          flashConsole(isAccent);
+          if (state.brightness > 0) {
+            metronomeConsole.classList.add(isAccent ? 'panel-flash-accent' : 'panel-flash-regular');
+          }
         }
-        headerPulseDot.className = isAccent
-          ? 'pulse-dot rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] scale-125 transition-all duration-75'
-          : 'pulse-dot rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] scale-110 transition-all duration-75';
+        headerPulseDot.className = isSilent
+          ? 'pulse-dot rounded-full bg-slate-500 transition-all duration-75'
+          : isAccent
+            ? 'pulse-dot rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] scale-125 transition-all duration-75'
+            : 'pulse-dot rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] scale-110 transition-all duration-75';
 
         setTimeout(() => {
           if (targetNode) {
-            targetNode.classList.remove('beat-accent-active', 'beat-regular-active');
+            targetNode.classList.remove('beat-accent-active', 'beat-regular-active', 'beat-mute-active');
           }
           metronomeConsole.classList.remove('panel-flash-accent', 'panel-flash-regular');
           if (state.isPlaying) {
@@ -1134,7 +1255,7 @@
         const currentTime = audioCtx.currentTime;
         while (state.visualQueue.length && state.visualQueue[0].time <= currentTime + 0.015) {
           const event = state.visualQueue.shift();
-          triggerBeatVisual(event.beat);
+          triggerBeatVisual(event.beat, event.kind);
         }
 
         requestAnimationFrame(visualLoop);
@@ -1213,6 +1334,15 @@
           state.volume = pick(saved.volume, 0, 100, state.volume);
           state.brightness = pick(saved.brightness, 0, 100, state.brightness);
           state.timerPresetSec = pick(saved.timerPresetSec, MIN_TIMER_SEC, MAX_TIMER_SEC, state.timerPresetSec);
+          if (saved.accentPatterns && typeof saved.accentPatterns === 'object') {
+            for (const [key, pattern] of Object.entries(saved.accentPatterns)) {
+              const n = Number(key);
+              if (Number.isInteger(n) && n >= MIN_TOP_TS && n <= MAX_TOP_TS &&
+                  typeof pattern === 'string' && pattern.length === n && /^[anm]+$/.test(pattern)) {
+                state.accentPatterns[n] = pattern;
+              }
+            }
+          }
           state.timerRemainingSec = state.timerPresetSec;
         } catch (e) { /* storage unavailable or corrupt: use defaults */ }
       }
@@ -1227,7 +1357,8 @@
             beatUnitIndex: state.beatUnitIndex,
             volume: state.volume,
             brightness: state.brightness,
-            timerPresetSec: state.timerPresetSec
+            timerPresetSec: state.timerPresetSec,
+            accentPatterns: state.accentPatterns
           }));
         } catch (e) { /* storage unavailable: settings just won't persist */ }
       }
@@ -1349,6 +1480,12 @@
       tsTopIncBtn.addEventListener('click', () => changeTopTimeSignature(1));
       tsBottomDecBtn.addEventListener('click', () => changeBottomTimeSignature(-1));
       tsBottomIncBtn.addEventListener('click', () => changeBottomTimeSignature(1));
+
+      beatLightsContainer.addEventListener('click', (e) => {
+        const node = e.target.closest('.beat-node');
+        if (node) cycleBeat(Number(node.dataset.beatIndex));
+      });
+      accentResetBtn.addEventListener('click', resetAccents);
 
       volumeSlider.addEventListener('input', () => setVolume(Number(volumeSlider.value)));
       brightnessSlider.addEventListener('input', () => setBrightness(Number(brightnessSlider.value)));
