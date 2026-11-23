@@ -27,18 +27,122 @@
     }
   </script>
   <style>
-    /* Allow vertical scrolling as a safety fallback inside fixed-height embeds (like Google Sites) */
+    /* ---------- Page layout ----------
+       Phones: the console fills the whole screen (width and height).
+       Wider screens (PC, tablet, landscape): a centered, phone-proportioned card with a capped size. */
     html, body {
-      min-height: 100%;
       margin: 0;
       padding: 0;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: auto; /* only kicks in on extremely short screens */
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh; /* dynamic viewport: excludes mobile browser toolbars */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding:
+        max(6px, env(safe-area-inset-top))
+        max(6px, env(safe-area-inset-right))
+        max(6px, env(safe-area-inset-bottom))
+        max(6px, env(safe-area-inset-left));
+    }
+
+    #metronomeConsole {
+      /* Everything inside scales from --u, which is 1% of the console height,
+         capped by the console width so things never get too wide for the screen. */
+      container-type: size;
+      --u: min(1cqh, 1.6cqw);
+      --v: 1cqh; /* pure height unit, for button heights on tall screens */
+      width: 100%;
+      max-width: 30rem;
+      flex: 0 0 auto;
+      /* Phones: exactly the screen height minus the page padding.
+         (An explicit height is needed for the container-relative sizing to work.) */
+      height: calc(100vh - max(6px, env(safe-area-inset-top)) - max(6px, env(safe-area-inset-bottom)));
+      height: calc(100dvh - max(6px, env(safe-area-inset-top)) - max(6px, env(safe-area-inset-bottom)));
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(5px, 1.1vh, 12px);
+      padding: clamp(8px, 1.4vh, 16px);
+    }
+    @supports not (container-type: size) {
+      #metronomeConsole { --u: min(1vh, 1.6vw); --v: 1vh; }
+    }
+    @media (min-width: 640px) {
+      body { padding: 1rem; }
+      #metronomeConsole {
+        height: min(calc(100vh - 2rem), 760px);
+        height: min(calc(100dvh - 2rem), 760px);
+      }
+    }
+
+    /* Rows share the console height in these proportions */
+    .row-beats { flex: 0.75 1 0; }
+    .row-bpm   { flex: 2.4 1 0;  }
+    .row-mid   { flex: 3 1 0;    }
+    .row-timer { flex: 0.95 1 0; }
+    .row-play  { flex: 1.2 1 0;  display: flex; }
+
+    /* ---------- Scalable text ---------- */
+    .lbl    { font-size: max(9px, calc(var(--u) * 1.7)); line-height: 1; }
+    .lbl-xs { font-size: max(8px, calc(var(--u) * 1.4)); line-height: 1; }
+
+    /* ---------- Row 1: beat strip ---------- */
+    .row-beats { padding: 0 calc(var(--u) * 1.8); gap: var(--u); }
+    .beat-side { gap: calc(var(--u) * 1); }
+    .pulse-dot { width: max(8px, calc(var(--u) * 1.3)); height: max(8px, calc(var(--u) * 1.3)); }
+    .meter-badge { font-size: max(11px, calc(var(--u) * 2)); padding: 0.2em 0.45em; line-height: 1.1; }
+    .install-btn { padding: 0.45em 0.9em; }
+    .beat-lights { gap: max(4px, calc(var(--u) * 0.8)); }
+    .beat-node { width: var(--b); height: var(--b); font-size: calc(var(--b) * 0.42); }
+    .beat-l { --b: max(24px, calc(var(--u) * 5.2)); }
+    .beat-m { --b: max(20px, calc(var(--u) * 4.2)); }
+    .beat-s { --b: max(16px, calc(var(--u) * 3.3)); }
+
+    /* ---------- Row 2: BPM ---------- */
+    .row-bpm { padding: calc(var(--u) * 1.2); gap: calc(var(--u) * 1); }
+    .bpm-arrow-btn { width: clamp(2.4rem, 11.5cqw, 5rem); }
+    .arrow-glyph { font-size: max(12px, calc(var(--u) * 3)); }
+    .arrow-sub   { font-size: max(9px, calc(var(--u) * 1.8)); margin-top: 0.3em; }
+    .bpm-number-text { font-size: max(1.8rem, calc(var(--u) * 11)); }
+    .bpm-caption { font-size: max(8px, calc(var(--u) * 1.5)); margin-top: 0.5em; }
+
+    /* ---------- Row 3: time signature + volume ---------- */
+    .row-mid { gap: calc(var(--u) * 1.2); }
+    .card { padding: calc(var(--u) * 1.4); gap: var(--u); }
+    .ts-arrow-btn { width: max(1.8rem, calc(var(--u) * 8)); height: max(1.6rem, min(calc(var(--v) * 5.5), calc(var(--u) * 9))); font-size: max(12px, calc(var(--u) * 2.6)); }
+    .ts-number-text { font-size: max(1.1rem, calc(var(--u) * 7.5)); }
+    .ts-divider { width: 45%; height: 2px; margin: calc(var(--v) * 1.2) 0; }
+    .vol-cycle-btn { padding: calc(var(--u) * 1) calc(var(--u) * 1.4); gap: var(--u); min-height: max(2rem, calc(var(--u) * 6)); max-height: calc(var(--v) * 11); }
+    .vol-icon { width: max(20px, calc(var(--u) * 4.5)); height: max(20px, calc(var(--u) * 4.5)); }
+    .vol-svg  { width: 65%; height: 65%; }
+    .vol-text { font-size: max(11px, calc(var(--u) * 2.6)); }
+    .vol-number { font-size: max(12px, calc(var(--u) * 3.4)); }
+    .vol-max { font-size: max(9px, calc(var(--u) * 1.6)); }
+    .vol-body { gap: var(--u); }
+    .vol-pills { gap: max(4px, calc(var(--u) * 0.7)); }
+    .vol-step-btn { height: max(20px, min(calc(var(--v) * 5), calc(var(--u) * 8))); font-size: max(10px, calc(var(--u) * 2)); }
+
+    /* ---------- Row 4: practice timer ---------- */
+    .row-timer { padding: calc(var(--u) * 0.8) calc(var(--u) * 1.6); gap: var(--u); }
+    .timer-adjuster { gap: calc(var(--u) * 0.6); padding: calc(var(--u) * 0.5) calc(var(--u) * 0.8); }
+    .timer-arrow { width: max(24px, calc(var(--u) * 5)); height: max(24px, min(calc(var(--v) * 5.5), calc(var(--u) * 8))); font-size: max(12px, calc(var(--u) * 2.2)); }
+    .timer-display { font-size: max(14px, calc(var(--u) * 3.3)); }
+    .timer-main-btn { height: max(28px, min(calc(var(--v) * 6), calc(var(--u) * 9))); padding: 0 calc(var(--u) * 1.7); font-size: max(10px, calc(var(--u) * 1.8)); }
+    .timer-reset { width: max(28px, calc(var(--u) * 6.5)); height: max(28px, min(calc(var(--v) * 6), calc(var(--u) * 9))); }
+    .timer-reset svg { width: 50%; height: 50%; }
+
+    /* ---------- Row 5: start / stop ---------- */
+    .start-btn { font-size: max(14px, calc(var(--u) * 2.8)); gap: 0.6em; }
+    .start-icon { width: 1.15em; height: 1.15em; }
 
     button, .tactile-btn {
       touch-action: manipulation;
@@ -49,22 +153,6 @@
     }
     .tactile-btn:active:not(:disabled) {
       transform: translateY(1px) scale(0.96);
-    }
-
-    /* Compact fluid sizing so the entire app fits in ~265px vertical height on mobile embeds */
-    .bpm-arrow-btn {
-      width: clamp(2.2rem, 11vw, 3.25rem);
-      height: clamp(2.4rem, 9vw, 3.1rem);
-    }
-    .bpm-number-text {
-      font-size: clamp(1.65rem, 8vw, 2.5rem);
-    }
-    .ts-arrow-btn {
-      width: clamp(1.65rem, 6.5vw, 2.15rem);
-      height: clamp(1.45rem, 5vw, 1.85rem);
-    }
-    .ts-number-text {
-      font-size: clamp(1.05rem, 4.5vw, 1.35rem);
     }
 
     /* Active flash animation for the beat indicator */
@@ -112,36 +200,36 @@
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 w-full flex flex-col items-center justify-start sm:justify-center p-1.5 sm:p-4 font-sans">
+<body class="bg-slate-950 text-slate-100 font-sans">
 
-  <!-- Ultra-Compact Metronome Console Container (Fits inside Google Sites mobile embeds) -->
-  <main id="metronomeConsole" class="w-full max-w-md flex flex-col bg-slate-900/95 border border-slate-800 rounded-2xl shadow-xl p-2 sm:p-3.5 transition-shadow duration-100 relative overflow-hidden gap-1.5 sm:gap-2.5">
+  <!-- Metronome console: fills the screen on phones, a capped card on larger screens -->
+  <main id="metronomeConsole" class="bg-slate-900/95 border border-slate-800 rounded-2xl shadow-xl transition-shadow duration-100 relative overflow-hidden">
     
     <!-- Top accent gradient line -->
     <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-emerald-500 to-cyan-500 opacity-85"></div>
 
-    <!-- ROW 1: Slim Visual Beat Indicator Strip (~34px height) -->
-    <section aria-label="Beat Indicator" class="bg-slate-950/90 border border-slate-800/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 min-h-[36px]">
-      <div class="flex items-center gap-1.5 shrink-0">
-        <div id="headerPulseDot" class="w-2 h-2 rounded-full bg-slate-700 transition-all duration-75"></div>
-        <span id="tempoMarking" class="text-[10px] font-bold uppercase tracking-wider text-amber-400/90">120 BPM</span>
+    <!-- ROW 1: Visual Beat Indicator Strip -->
+    <section aria-label="Beat Indicator" class="row-beats bg-slate-950/90 border border-slate-800/90 rounded-xl flex items-center justify-between">
+      <div class="beat-side flex items-center shrink-0">
+        <div id="headerPulseDot" class="pulse-dot rounded-full bg-slate-700 transition-all duration-75"></div>
+        <span id="tempoMarking" class="lbl font-bold uppercase tracking-wider text-amber-400/90">120 BPM</span>
       </div>
 
       <!-- Dynamic Row of Beat Lights -->
-      <div id="beatLightsContainer" class="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 flex-1">
+      <div id="beatLightsContainer" class="beat-lights flex flex-wrap items-center justify-center flex-1">
         <!-- Populated by JS -->
       </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button id="install-btn" style="display: none;" class="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/30 active:scale-95 transition">
+      <div class="beat-side flex items-center shrink-0">
+        <button id="install-btn" style="display: none;" class="install-btn lbl rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold uppercase tracking-wider hover:bg-emerald-500/30 active:scale-95 transition">
           Install App
         </button>
-        <span id="headerMeterBadge" class="font-mono text-[11px] font-bold text-emerald-400 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded shrink-0">4/4</span>
+        <span id="headerMeterBadge" class="meter-badge font-mono font-bold text-emerald-400 bg-slate-900 border border-slate-800 rounded shrink-0">4/4</span>
       </div>
     </section>
 
-    <!-- ROW 2: BPM Display & Controls: [<<] [<] [BPM Display] [>] [>>] (~58px height) -->
-    <section aria-label="BPM Controls" class="flex items-center justify-between gap-1.5 sm:gap-2 bg-slate-950 border border-slate-800 rounded-xl p-1.5 sm:p-2.5 shadow-inner">
+    <!-- ROW 2: BPM Display & Controls: [<<] [<] [BPM Display] [>] [>>] -->
+    <section aria-label="BPM Controls" class="row-bpm flex items-stretch justify-between bg-slate-950 border border-slate-800 rounded-xl shadow-inner">
       
       <!-- Double Left Arrow: -5 BPM -->
       <button
@@ -151,8 +239,8 @@
         aria-label="Decrease BPM by 5"
         class="tactile-btn bpm-arrow-btn flex flex-col items-center justify-center rounded-lg bg-slate-800/90 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 shadow disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
       >
-        <span class="font-mono text-xs sm:text-base font-bold leading-none tracking-tighter">&lt;&lt;</span>
-        <span class="text-[9px] font-semibold text-slate-400 leading-none mt-0.5">-5</span>
+        <span class="arrow-glyph font-mono font-bold leading-none tracking-tighter">&lt;&lt;</span>
+        <span class="arrow-sub font-semibold text-slate-400 leading-none">-5</span>
       </button>
 
       <!-- Single Left Arrow: -1 BPM -->
@@ -163,12 +251,12 @@
         aria-label="Decrease BPM by 1"
         class="tactile-btn bpm-arrow-btn flex flex-col items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 shadow disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
       >
-        <span class="font-mono text-xs sm:text-base font-bold leading-none">&lt;</span>
-        <span class="text-[9px] font-semibold text-slate-400 leading-none mt-0.5">-1</span>
+        <span class="arrow-glyph font-mono font-bold leading-none">&lt;</span>
+        <span class="arrow-sub font-semibold text-slate-400 leading-none">-1</span>
       </button>
 
       <!-- Center BPM Number Display -->
-      <div class="flex-1 min-w-0 flex flex-col items-center justify-center py-0.5 px-1 bg-slate-900/90 border border-slate-800/80 rounded-lg">
+      <div class="flex-1 min-w-0 flex flex-col items-center justify-center px-1 bg-slate-900/90 border border-slate-800/80 rounded-lg">
         <div
           id="bpmDisplay"
           class="bpm-number-text font-mono font-extrabold tracking-tight text-white tabular-nums leading-none"
@@ -176,7 +264,7 @@
         >
           120
         </div>
-        <span class="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mt-0.5">BPM (30–300)</span>
+        <span class="bpm-caption font-bold uppercase tracking-widest text-slate-400 leading-none">BPM (30–300)</span>
       </div>
 
       <!-- Single Right Arrow: +1 BPM -->
@@ -187,8 +275,8 @@
         aria-label="Increase BPM by 1"
         class="tactile-btn bpm-arrow-btn flex flex-col items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 shadow disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
       >
-        <span class="font-mono text-xs sm:text-base font-bold leading-none">&gt;</span>
-        <span class="text-[9px] font-semibold text-slate-400 leading-none mt-0.5">+1</span>
+        <span class="arrow-glyph font-mono font-bold leading-none">&gt;</span>
+        <span class="arrow-sub font-semibold text-slate-400 leading-none">+1</span>
       </button>
 
       <!-- Double Right Arrow: +5 BPM -->
@@ -199,30 +287,30 @@
         aria-label="Increase BPM by 5"
         class="tactile-btn bpm-arrow-btn flex flex-col items-center justify-center rounded-lg bg-slate-800/90 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 shadow disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
       >
-        <span class="font-mono text-xs sm:text-base font-bold leading-none tracking-tighter">&gt;&gt;</span>
-        <span class="text-[9px] font-semibold text-slate-400 leading-none mt-0.5">+5</span>
+        <span class="arrow-glyph font-mono font-bold leading-none tracking-tighter">&gt;&gt;</span>
+        <span class="arrow-sub font-semibold text-slate-400 leading-none">+5</span>
       </button>
 
     </section>
 
-    <!-- ROW 3: Time Signature & Volume Control Side-by-Side Grid (~76px height) -->
-    <section class="grid grid-cols-2 gap-2">
+    <!-- ROW 3: Time Signature & Volume Control Side-by-Side Grid -->
+    <section class="row-mid grid grid-cols-2">
       
       <!-- Left Card: Time Signature (Top & Bottom Numbers with < and > arrows) -->
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex flex-col justify-between min-w-0">
-        <div class="flex items-center justify-between gap-1 mb-1">
-          <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">Time Sig</span>
-          <span id="timeSigLabel" class="font-mono text-[9px] sm:text-[10px] font-bold text-amber-400">4/4</span>
+      <div class="card bg-slate-950 border border-slate-800 rounded-xl flex flex-col min-w-0">
+        <div class="flex items-center justify-between gap-1">
+          <span class="lbl font-bold uppercase tracking-wider text-slate-400">Time Sig</span>
+          <span id="timeSigLabel" class="lbl font-mono font-bold text-amber-400">4/4</span>
         </div>
 
-        <div class="flex flex-col items-center justify-center my-auto">
+        <div class="flex-1 flex flex-col items-center justify-center">
           <!-- Top Number Row (Beats per Measure: 1-16) -->
-          <div class="flex items-center justify-between w-full max-w-[120px] gap-1">
+          <div class="flex items-center justify-between w-full gap-1">
             <button
               id="tsTopDecBtn"
               type="button"
               aria-label="Decrease top time signature number"
-              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono text-xs font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
+              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
             >
               &lt;
             </button>
@@ -231,22 +319,22 @@
               id="tsTopIncBtn"
               type="button"
               aria-label="Increase top time signature number"
-              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono text-xs font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
+              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
             >
               &gt;
             </button>
           </div>
 
           <!-- Fraction Divider Bar -->
-          <div class="w-16 sm:w-20 h-[1.5px] bg-slate-700 rounded-full my-1"></div>
+          <div class="ts-divider bg-slate-700 rounded-full"></div>
 
           <!-- Bottom Number Row (Beat Note Value: 1, 2, 4, 8, 16) -->
-          <div class="flex items-center justify-between w-full max-w-[120px] gap-1">
+          <div class="flex items-center justify-between w-full gap-1">
             <button
               id="tsBottomDecBtn"
               type="button"
               aria-label="Decrease bottom time signature number"
-              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono text-xs font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
+              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
             >
               &lt;
             </button>
@@ -255,7 +343,7 @@
               id="tsBottomIncBtn"
               type="button"
               aria-label="Increase bottom time signature number"
-              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono text-xs font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
+              class="tactile-btn ts-arrow-btn rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
             >
               &gt;
             </button>
@@ -264,81 +352,81 @@
       </div>
 
       <!-- Right Card: Volume Control (0 to 5) -->
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex flex-col justify-between min-w-0">
-        <div class="flex items-center justify-between gap-1 mb-1">
-          <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">Volume</span>
-          <span id="volumeStatusBadge" class="font-mono text-[9px] sm:text-[10px] font-bold text-emerald-400">Lvl 4/5</span>
+      <div class="card bg-slate-950 border border-slate-800 rounded-xl flex flex-col min-w-0">
+        <div class="flex items-center justify-between gap-1">
+          <span class="lbl font-bold uppercase tracking-wider text-slate-400">Volume</span>
+          <span id="volumeStatusBadge" class="lbl font-mono font-bold text-emerald-400">Lvl 4/5</span>
         </div>
 
-        <div class="my-auto flex flex-col gap-1.5">
+        <div class="vol-body flex-1 flex flex-col justify-center">
           <!-- Main Interactive Volume Button (Cycles 0 -> 5 on tap) -->
           <button
             id="volumeCycleBtn"
             type="button"
             title="Tap to cycle volume (0 = Mute to 5 = Max)"
             aria-label="Cycle Volume Level"
-            class="tactile-btn w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 flex items-center justify-between gap-1.5"
+            class="tactile-btn vol-cycle-btn flex-1 w-full rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 flex items-center justify-between"
           >
             <div class="flex items-center gap-1.5 min-w-0">
-              <div id="volumeIconWrapper" class="w-5 h-5 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0">
-                <svg id="volumeSvg" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <div id="volumeIconWrapper" class="vol-icon rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0">
+                <svg id="volumeSvg" xmlns="http://www.w3.org/2000/svg" class="vol-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
                 </svg>
               </div>
-              <span class="text-[11px] sm:text-xs font-bold text-white truncate">Vol</span>
+              <span class="vol-text font-bold text-white truncate">Vol</span>
             </div>
 
             <div class="flex items-baseline gap-0.5 bg-slate-950 border border-slate-800 px-1.5 py-0.5 rounded shrink-0">
-              <span id="volumeNumberDisplay" class="font-mono text-xs sm:text-sm font-extrabold text-amber-400 tabular-nums">4</span>
-              <span class="font-mono text-[9px] text-slate-500 font-bold">/5</span>
+              <span id="volumeNumberDisplay" class="vol-number font-mono font-extrabold text-amber-400 tabular-nums">4</span>
+              <span class="vol-max font-mono text-slate-500 font-bold">/5</span>
             </div>
           </button>
 
           <!-- Direct Level Selector Pills (0 to 5) -->
-          <div class="grid grid-cols-6 gap-1 w-full" role="group" aria-label="Direct volume levels">
-            <button type="button" data-vol="0" class="vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border transition-all">0</button>
-            <button type="button" data-vol="1" class="vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border transition-all">1</button>
-            <button type="button" data-vol="2" class="vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border transition-all">2</button>
-            <button type="button" data-vol="3" class="vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border transition-all">3</button>
-            <button type="button" data-vol="4" class="vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border transition-all">4</button>
-            <button type="button" data-vol="5" class="vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border transition-all">5</button>
+          <div class="vol-pills grid grid-cols-6 w-full" role="group" aria-label="Direct volume levels">
+            <button type="button" data-vol="0" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">0</button>
+            <button type="button" data-vol="1" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">1</button>
+            <button type="button" data-vol="2" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">2</button>
+            <button type="button" data-vol="3" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">3</button>
+            <button type="button" data-vol="4" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">4</button>
+            <button type="button" data-vol="5" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">5</button>
           </div>
         </div>
       </div>
 
     </section>
 
-    <!-- ROW 4: Compact Practice Countdown Timer Bar -->
+    <!-- ROW 4: Practice Countdown Timer Bar -->
     <section
       id="timerSection"
       aria-label="Practice Countdown Timer"
-      class="bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2 flex items-center justify-between gap-1.5 sm:gap-2 transition-colors"
+      class="row-timer bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between transition-colors"
     >
       <!-- Timer Label & Status Indicator -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <span id="timerStatusDot" class="w-2 h-2 rounded-full bg-slate-700 transition-all"></span>
-        <div class="flex flex-col">
-          <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">Timer</span>
-          <span id="timerStateSubtext" class="text-[8px] font-mono text-cyan-400 font-semibold leading-none mt-0.5">MIN:SEC</span>
+        <span id="timerStatusDot" class="pulse-dot rounded-full bg-slate-700 transition-all"></span>
+        <div class="flex flex-col gap-1">
+          <span class="lbl font-bold uppercase tracking-wider text-slate-400">Timer</span>
+          <span id="timerStateSubtext" class="lbl-xs font-mono text-cyan-400 font-semibold">MIN:SEC</span>
         </div>
       </div>
 
       <!-- Minute Adjuster & Countdown Readout: [<] [MM:SS] [>] -->
-      <div class="flex items-center gap-1 bg-slate-900/90 border border-slate-800/90 rounded-lg px-1.5 py-0.5">
+      <div class="timer-adjuster flex items-center bg-slate-900/90 border border-slate-800/90 rounded-lg">
         <button
           id="timerDecBtn"
           type="button"
           title="Decrease timer by 1 minute"
           aria-label="Decrease timer by 1 minute"
-          class="tactile-btn w-6 h-6 sm:w-7 sm:h-6 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono text-xs font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
+          class="tactile-btn timer-arrow rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
         >
           &lt;
         </button>
 
         <div
           id="timerDisplay"
-          class="font-mono text-sm sm:text-base font-extrabold text-white tabular-nums px-1.5 tracking-tight select-none"
+          class="timer-display font-mono font-extrabold text-white tabular-nums px-1 tracking-tight select-none"
           aria-live="polite"
         >
           05:00
@@ -349,7 +437,7 @@
           type="button"
           title="Increase timer by 1 minute"
           aria-label="Increase timer by 1 minute"
-          class="tactile-btn w-6 h-6 sm:w-7 sm:h-6 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono text-xs font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
+          class="tactile-btn timer-arrow rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
         >
           &gt;
         </button>
@@ -360,7 +448,7 @@
         <button
           id="timerStartPauseBtn"
           type="button"
-          class="tactile-btn h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all"
+          class="tactile-btn timer-main-btn rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all"
         >
           <span id="timerStartPauseText">Start Timer</span>
         </button>
@@ -370,9 +458,9 @@
           type="button"
           title="Reset Timer"
           aria-label="Reset Timer"
-          class="tactile-btn h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-300 flex items-center justify-center"
+          class="tactile-btn timer-reset rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-300 flex items-center justify-center"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
             <path d="M3 3v5h5"/>
           </svg>
@@ -380,15 +468,15 @@
       </div>
     </section>
 
-    <!-- ROW 5: Prominent Start / Stop Metronome Button (~40px height) -->
-    <section aria-label="Playback Controls">
+    <!-- ROW 5: Prominent Start / Stop Metronome Button -->
+    <section aria-label="Playback Controls" class="row-play">
       <button
         id="startStopBtn"
         type="button"
-        class="tactile-btn w-full py-2 sm:py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-extrabold text-sm sm:text-base tracking-wide uppercase shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all"
+        class="tactile-btn start-btn w-full px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-extrabold tracking-wide uppercase shadow-md shadow-emerald-500/20 flex items-center justify-center transition-all"
       >
         <span id="startStopIcon" class="flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 fill-current" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" class="start-icon fill-current" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z"/>
           </svg>
         </span>
@@ -530,10 +618,10 @@
           const node = document.createElement('div');
           node.dataset.beatIndex = i;
           const sizeClasses = state.beatsPerMeasure > 10
-            ? 'w-4 h-4 text-[9px]'
+            ? 'beat-s'
             : state.beatsPerMeasure > 6
-              ? 'w-5 h-5 text-[10px]'
-              : 'w-6 h-6 text-[11px]';
+              ? 'beat-m'
+              : 'beat-l';
 
           node.className = `beat-node ${sizeClasses} rounded-full border flex items-center justify-center font-mono font-bold ${
             isAccent
@@ -550,16 +638,16 @@
 
         if (state.volume === 0) {
           volumeStatusBadge.textContent = 'Muted';
-          volumeStatusBadge.className = 'font-mono text-[9px] sm:text-[10px] font-bold text-rose-400';
-          volumeIconWrapper.className = 'w-5 h-5 rounded bg-slate-900 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0';
+          volumeStatusBadge.className = 'lbl font-mono font-bold text-rose-400';
+          volumeIconWrapper.className = 'vol-icon rounded bg-slate-900 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0';
           volumeSvg.innerHTML = `
             <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M23 9l-6 6m0-6l6 6" />
           `;
         } else {
           volumeStatusBadge.textContent = `Lvl ${state.volume}/5`;
-          volumeStatusBadge.className = 'font-mono text-[9px] sm:text-[10px] font-bold text-emerald-400';
-          volumeIconWrapper.className = 'w-5 h-5 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0';
+          volumeStatusBadge.className = 'lbl font-mono font-bold text-emerald-400';
+          volumeIconWrapper.className = 'vol-icon rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0';
           
           if (state.volume <= 2) {
             volumeSvg.innerHTML = `
@@ -577,33 +665,33 @@
         volStepBtns.forEach((btn) => {
           const btnVol = parseInt(btn.dataset.vol, 10);
           if (btnVol === state.volume) {
-            btn.className = 'vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border bg-amber-500 text-slate-950 border-amber-400 shadow';
+            btn.className = 'vol-step-btn tactile-btn rounded font-mono font-bold border bg-amber-500 text-slate-950 border-amber-400 shadow';
           } else if (btnVol < state.volume && state.volume > 0) {
-            btn.className = 'vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+            btn.className = 'vol-step-btn tactile-btn rounded font-mono font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
           } else {
-            btn.className = 'vol-step-btn tactile-btn h-5 sm:h-6 rounded font-mono text-[10px] font-bold border bg-slate-900 text-slate-400 border-slate-800';
+            btn.className = 'vol-step-btn tactile-btn rounded font-mono font-bold border bg-slate-900 text-slate-400 border-slate-800';
           }
         });
       }
 
       function updatePlaybackUI() {
         if (state.isPlaying) {
-          startStopBtn.className = 'tactile-btn w-full py-2 sm:py-2.5 px-4 rounded-xl bg-rose-500 hover:bg-rose-400 active:bg-rose-600 text-white font-extrabold text-sm sm:text-base tracking-wide uppercase shadow-md shadow-rose-500/20 flex items-center justify-center gap-2 transition-all';
+          startStopBtn.className = 'tactile-btn start-btn w-full px-4 rounded-xl bg-rose-500 hover:bg-rose-400 active:bg-rose-600 text-white font-extrabold tracking-wide uppercase shadow-md shadow-rose-500/20 flex items-center justify-center transition-all';
           startStopIcon.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 fill-current" viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" class="start-icon fill-current" viewBox="0 0 24 24">
               <path d="M6 6h12v12H6z"/>
             </svg>
           `;
           startStopText.textContent = 'Stop Metronome';
         } else {
-          startStopBtn.className = 'tactile-btn w-full py-2 sm:py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-extrabold text-sm sm:text-base tracking-wide uppercase shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all';
+          startStopBtn.className = 'tactile-btn start-btn w-full px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-extrabold tracking-wide uppercase shadow-md shadow-emerald-500/20 flex items-center justify-center transition-all';
           startStopIcon.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 fill-current" viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" class="start-icon fill-current" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
           `;
           startStopText.textContent = 'Start Metronome';
-          headerPulseDot.className = 'w-2 h-2 rounded-full bg-slate-700 transition-all duration-75';
+          headerPulseDot.className = 'pulse-dot rounded-full bg-slate-700 transition-all duration-75';
           clearBeatVisuals();
         }
       }
@@ -626,25 +714,25 @@
 
         if (state.timerAlarmActive) {
           timerSection.classList.add('timer-alarm-active');
-          timerStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]';
+          timerStatusDot.className = 'pulse-dot rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]';
           timerStateSubtext.textContent = 'TIME UP!';
-          timerStateSubtext.className = 'text-[8px] font-mono text-amber-300 font-bold leading-none mt-0.5';
-          timerStartPauseBtn.className = 'tactile-btn h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
+          timerStateSubtext.className = 'lbl-xs font-mono text-amber-300 font-bold';
+          timerStartPauseBtn.className = 'tactile-btn timer-main-btn rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
           timerStartPauseText.textContent = 'Stop Alarm';
         } else if (state.timerRunning) {
           timerSection.classList.remove('timer-alarm-active');
-          timerStatusDot.className = 'w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] animate-pulse';
+          timerStatusDot.className = 'pulse-dot rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] animate-pulse';
           timerStateSubtext.textContent = 'RUNNING';
-          timerStateSubtext.className = 'text-[8px] font-mono text-cyan-400 font-semibold leading-none mt-0.5';
-          timerStartPauseBtn.className = 'tactile-btn h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
+          timerStateSubtext.className = 'lbl-xs font-mono text-cyan-400 font-semibold';
+          timerStartPauseBtn.className = 'tactile-btn timer-main-btn rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
           timerStartPauseText.textContent = 'Pause';
         } else {
           timerSection.classList.remove('timer-alarm-active');
-          timerStatusDot.className = 'w-2 h-2 rounded-full bg-slate-700 transition-all';
+          timerStatusDot.className = 'pulse-dot rounded-full bg-slate-700 transition-all';
           const isPausedMidway = state.timerRemainingSec > 0 && state.timerRemainingSec < state.timerMinutes * 60;
           timerStateSubtext.textContent = isPausedMidway ? 'PAUSED' : 'READY';
-          timerStateSubtext.className = 'text-[8px] font-mono text-slate-400 font-semibold leading-none mt-0.5';
-          timerStartPauseBtn.className = 'tactile-btn h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
+          timerStateSubtext.className = 'lbl-xs font-mono text-slate-400 font-semibold';
+          timerStartPauseBtn.className = 'tactile-btn timer-main-btn rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
           timerStartPauseText.textContent = isPausedMidway ? 'Resume' : 'Start Timer';
         }
       }
@@ -907,8 +995,8 @@
 
         metronomeConsole.classList.add(isAccent ? 'panel-flash-accent' : 'panel-flash-regular');
         headerPulseDot.className = isAccent
-          ? 'w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] scale-125 transition-all duration-75'
-          : 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] scale-110 transition-all duration-75';
+          ? 'pulse-dot rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] scale-125 transition-all duration-75'
+          : 'pulse-dot rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] scale-110 transition-all duration-75';
 
         setTimeout(() => {
           if (targetNode) {
@@ -916,7 +1004,7 @@
           }
           metronomeConsole.classList.remove('panel-flash-accent', 'panel-flash-regular');
           if (state.isPlaying) {
-            headerPulseDot.className = 'w-2 h-2 rounded-full bg-slate-700 transition-all duration-150';
+            headerPulseDot.className = 'pulse-dot rounded-full bg-slate-700 transition-all duration-150';
           }
         }, 105);
       }

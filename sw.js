@@ -1,4 +1,5 @@
-const CACHE_NAME = 'metronome-v1';
+// Bump this version whenever the app's files change, so old caches get cleared.
+const CACHE_NAME = 'metronome-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -9,12 +10,41 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+// Remove caches from older versions and take control of open pages right away.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  // Pages: network first, so updates pushed to GitHub show up; fall back to the cache when offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
+          return response;
+        })
+        .catch(() => caches.match('./index.html').then((cached) => cached || caches.match('./')))
+    );
+    return;
+  }
+
+  // Everything else: cache first, then network.
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(request).then((response) => response || fetch(request))
   );
 });
