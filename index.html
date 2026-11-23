@@ -104,6 +104,10 @@
     .arrow-sub   { font-size: max(9px, calc(var(--u) * 1.8)); margin-top: 0.3em; }
     .bpm-number-text { font-size: max(1.8rem, calc(var(--u) * 11)); }
     .bpm-caption { font-size: max(8px, calc(var(--u) * 1.5)); margin-top: 0.5em; }
+    /* Tap tempo feedback */
+    .bpm-tap { cursor: pointer; }
+    .bpm-tap.tactile-btn:active:not(:disabled) { transform: scale(0.985); }
+    .bpm-tap.tap-hit { background-color: #1e293b; border-color: #10b981; }
 
     /* ---------- Row 3: time signature + volume/brightness ---------- */
     .row-mid { gap: calc(var(--u) * 1.2); }
@@ -237,7 +241,7 @@
   </style>
   <!-- Tailwind CSS v3.4.17, pre-generated from the classes this page uses (no CDN, works offline).
        If you add new Tailwind classes, the file needs regenerating. -->
-  <link rel="stylesheet" href="tailwind.css?v=4">
+  <link rel="stylesheet" href="tailwind.css?v=7">
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans">
 
@@ -294,8 +298,14 @@
         <span class="arrow-sub font-semibold text-slate-400 leading-none">-1</span>
       </button>
 
-      <!-- Center BPM Number Display -->
-      <div class="flex-1 min-w-0 flex flex-col items-center justify-center px-1 bg-slate-900/90 border border-slate-800/80 rounded-lg">
+      <!-- Center BPM Number Display — also the Tap Tempo button (tap it along with the music, or press T) -->
+      <button
+        id="bpmTapBtn"
+        type="button"
+        title="Tap repeatedly along with the music to set the tempo (keyboard: T)"
+        aria-label="Tap tempo"
+        class="tactile-btn bpm-tap flex-1 min-w-0 flex flex-col items-center justify-center px-1 bg-slate-900/90 border border-slate-800/80 rounded-lg"
+      >
         <div
           id="bpmDisplay"
           class="bpm-number-text font-mono font-extrabold tracking-tight text-white tabular-nums leading-none"
@@ -303,8 +313,8 @@
         >
           120
         </div>
-        <span class="bpm-caption font-bold uppercase tracking-widest text-slate-400 leading-none">BPM (30–300)</span>
-      </div>
+        <span id="bpmCaption" class="bpm-caption font-bold uppercase tracking-widest text-slate-400 leading-none">Tap for tempo</span>
+      </button>
 
       <!-- Single Right Arrow: +1 BPM -->
       <button
@@ -591,6 +601,8 @@
       const bpmDec1Btn = document.getElementById('bpmDec1Btn');
       const bpmInc1Btn = document.getElementById('bpmInc1Btn');
       const bpmInc5Btn = document.getElementById('bpmInc5Btn');
+      const bpmTapBtn = document.getElementById('bpmTapBtn');
+      const bpmCaption = document.getElementById('bpmCaption');
 
       // Time signature elements
       const timeSigLabel = document.getElementById('timeSigLabel');
@@ -938,6 +950,7 @@
           state.timerEndTimeMs = Date.now() + next * 1000;
         } else if (!state.timerPaused) {
           state.timerPresetSec = next;
+          saveSettings();
         }
         updateTimerUI();
       }
@@ -1144,15 +1157,21 @@
         }
 
         updatePlaybackUI();
+        updateWakeLock();
       }
 
       // --- State Mutation Handlers ---
-      function changeBpm(delta) {
-        const nextBpm = Math.min(MAX_BPM, Math.max(MIN_BPM, state.bpm + delta));
+      function setBpm(bpm) {
+        const nextBpm = Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(bpm)));
         if (nextBpm !== state.bpm) {
           state.bpm = nextBpm;
           updateBpmUI();
+          saveSettings();
         }
+      }
+
+      function changeBpm(delta) {
+        setBpm(state.bpm + delta);
       }
 
       function changeTopTimeSignature(delta) {
@@ -1163,6 +1182,7 @@
             state.currentBeat = 0;
           }
           updateTimeSignatureUI();
+          saveSettings();
         }
       }
 
@@ -1171,18 +1191,144 @@
         if (nextIndex !== state.beatUnitIndex) {
           state.beatUnitIndex = nextIndex;
           updateTimeSignatureUI();
+          saveSettings();
         }
+      }
+
+      // --- Saved settings (restored the next time the app opens) ---
+      const SETTINGS_KEY = 'studioMetronome.settings.v1';
+      let saveTimeoutID = null;
+
+      function loadSettings() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+          if (!saved || typeof saved !== 'object') return;
+          const pick = (v, min, max, fallback) =>
+            (typeof v === 'number' && isFinite(v)) ? Math.min(max, Math.max(min, Math.round(v))) : fallback;
+          state.bpm = pick(saved.bpm, MIN_BPM, MAX_BPM, state.bpm);
+          state.beatsPerMeasure = pick(saved.beatsPerMeasure, MIN_TOP_TS, MAX_TOP_TS, state.beatsPerMeasure);
+          state.beatUnitIndex = pick(saved.beatUnitIndex, 0, NOTE_VALUES.length - 1, state.beatUnitIndex);
+          state.volume = pick(saved.volume, 0, 100, state.volume);
+          state.brightness = pick(saved.brightness, 0, 100, state.brightness);
+          state.timerPresetSec = pick(saved.timerPresetSec, MIN_TIMER_SEC, MAX_TIMER_SEC, state.timerPresetSec);
+          state.timerRemainingSec = state.timerPresetSec;
+        } catch (e) { /* storage unavailable or corrupt: use defaults */ }
+      }
+
+      function writeSettingsNow() {
+        clearTimeout(saveTimeoutID);
+        saveTimeoutID = null;
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+            bpm: state.bpm,
+            beatsPerMeasure: state.beatsPerMeasure,
+            beatUnitIndex: state.beatUnitIndex,
+            volume: state.volume,
+            brightness: state.brightness,
+            timerPresetSec: state.timerPresetSec
+          }));
+        } catch (e) { /* storage unavailable: settings just won't persist */ }
+      }
+
+      // Debounced, so dragging a slider doesn't write on every pixel
+      function saveSettings() {
+        clearTimeout(saveTimeoutID);
+        saveTimeoutID = setTimeout(writeSettingsNow, 300);
+      }
+
+      // --- Keep the screen awake while the metronome is playing ---
+      let wakeLock = null;
+      let wakeLockBusy = false;
+
+      async function updateWakeLock() {
+        if (!('wakeLock' in navigator) || wakeLockBusy) return;
+        const wanted = state.isPlaying && document.visibilityState === 'visible';
+        wakeLockBusy = true;
+        let failed = false;
+        try {
+          if (wanted && !wakeLock) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', () => { wakeLock = null; });
+          } else if (!wanted && wakeLock) {
+            const lock = wakeLock;
+            wakeLock = null;
+            await lock.release();
+          }
+        } catch (e) {
+          wakeLock = null; // e.g. battery saver refused it; the metronome still works
+          failed = true;
+        } finally {
+          wakeLockBusy = false;
+        }
+        // Playback may have been toggled while we were waiting; catch up once (no retry after a refusal)
+        const stillWanted = state.isPlaying && document.visibilityState === 'visible';
+        if (!failed && stillWanted !== !!wakeLock) updateWakeLock();
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        // The browser drops the lock when the app is hidden; take it again on return
+        updateWakeLock();
+        if (document.visibilityState === 'hidden' && saveTimeoutID) writeSettingsNow();
+      });
+      window.addEventListener('pagehide', () => { if (saveTimeoutID) writeSettingsNow(); });
+
+      // --- Tap tempo ---
+      // Tap the BPM display (or press T) along with the music; the tempo follows the average
+      // of the last few taps. A pause of more than 2 seconds starts a fresh count.
+      const TAP_RESET_MS = 2000;
+      const TAP_MAX_INTERVALS = 5;
+      let tapTimes = [];
+      let tapCaptionTimeoutID = null;
+      let tapHitTimeoutID = null;
+
+      function setTapCaption(text, holdMs) {
+        bpmCaption.textContent = text;
+        clearTimeout(tapCaptionTimeoutID);
+        tapCaptionTimeoutID = setTimeout(() => { bpmCaption.textContent = 'Tap for tempo'; }, holdMs);
+      }
+
+      function tapTempo() {
+        const now = performance.now();
+        if (tapTimes.length && now - tapTimes[tapTimes.length - 1] > TAP_RESET_MS) {
+          tapTimes = [];
+        }
+        // A tap far off the rhythm so far (a double-tap, or a new tempo) starts a fresh count from it
+        if (tapTimes.length >= 2) {
+          const avgSoFar = (tapTimes[tapTimes.length - 1] - tapTimes[0]) / (tapTimes.length - 1);
+          const interval = now - tapTimes[tapTimes.length - 1];
+          if (Math.abs(interval - avgSoFar) > avgSoFar * 0.4) {
+            tapTimes = interval < avgSoFar * 0.4 ? [] : [tapTimes[tapTimes.length - 1]];
+          }
+        }
+        tapTimes.push(now);
+        if (tapTimes.length > TAP_MAX_INTERVALS + 1) tapTimes.shift();
+
+        bpmTapBtn.classList.add('tap-hit');
+        clearTimeout(tapHitTimeoutID);
+        tapHitTimeoutID = setTimeout(() => bpmTapBtn.classList.remove('tap-hit'), 90);
+
+        if (tapTimes.length < 2) {
+          setTapCaption('Keep tapping…', TAP_RESET_MS);
+          return;
+        }
+        const avgIntervalMs = (tapTimes[tapTimes.length - 1] - tapTimes[0]) / (tapTimes.length - 1);
+        // Taps are beats as the metronome plays them, so account for the beat unit (x/8 = eighth notes)
+        const bottomValue = NOTE_VALUES[state.beatUnitIndex];
+        setBpm((60000 * 4) / (avgIntervalMs * bottomValue));
+        setTapCaption('Tapped tempo', TAP_RESET_MS);
       }
 
       function setVolume(newVolume) {
         state.volume = Math.min(100, Math.max(0, Math.round(newVolume)));
         updateVolumeUI();
         applyVolumeToAudio();
+        saveSettings();
       }
 
       function setBrightness(newBrightness) {
         state.brightness = Math.min(100, Math.max(0, Math.round(newBrightness)));
         updateBrightnessUI();
+        saveSettings();
       }
 
       // --- Event Listeners ---
@@ -1190,6 +1336,12 @@
       bpmDec1Btn.addEventListener('click', () => changeBpm(-1));
       bpmInc1Btn.addEventListener('click', () => changeBpm(1));
       bpmInc5Btn.addEventListener('click', () => changeBpm(5));
+      bpmTapBtn.addEventListener('pointerdown', (e) => {
+        if (e.button === 0) tapTempo();
+      });
+      bpmTapBtn.addEventListener('click', (e) => {
+        if (e.detail === 0) tapTempo(); // keyboard activation (Enter)
+      });
 
       tsTopDecBtn.addEventListener('click', () => changeTopTimeSignature(-1));
       tsTopIncBtn.addEventListener('click', () => changeTopTimeSignature(1));
@@ -1214,6 +1366,8 @@
         if (e.code === 'Space') {
           e.preventDefault();
           toggleStartStop();
+        } else if (e.code === 'KeyT' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          tapTempo();
         } else if (onSlider) {
           return; // let arrow keys move the focused slider
         } else if (e.code === 'ArrowLeft') {
@@ -1231,7 +1385,8 @@
         }
       });
 
-      // Initialize UI on load
+      // Initialize UI on load (with the settings saved last time, if any)
+      loadSettings();
       updateBpmUI();
       updateTimeSignatureUI();
       updateVolumeUI();
