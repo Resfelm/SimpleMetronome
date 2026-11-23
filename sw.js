@@ -1,5 +1,5 @@
 // Bump this version whenever the app's files change, so old caches get cleared.
-const CACHE_NAME = 'metronome-v7';
+const CACHE_NAME = 'metronome-v8';
 // Everything the app needs, so it runs fully offline once installed.
 const ASSETS = [
   './',
@@ -8,6 +8,11 @@ const ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './icon-maskable-192.png',
+  './icon-maskable-512.png',
+  './apple-touch-icon.png',
+  './favicon-32.png',
+  './favicon-16.png',
   './fonts/inter-400.woff',
   './fonts/inter-600.woff',
   './fonts/inter-700.woff',
