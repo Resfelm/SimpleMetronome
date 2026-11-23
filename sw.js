@@ -1,11 +1,19 @@
 // Bump this version whenever the app's files change, so old caches get cleared.
-const CACHE_NAME = 'metronome-v2';
+const CACHE_NAME = 'metronome-v3';
+// Everything the app needs, so it runs fully offline once installed.
 const ASSETS = [
   './',
   './index.html',
+  './tailwind.css',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './fonts/inter-400.woff',
+  './fonts/inter-600.woff',
+  './fonts/inter-700.woff',
+  './fonts/inter-800.woff',
+  './fonts/jetbrains-mono-400.woff',
+  './fonts/jetbrains-mono-700.woff'
 ];
 
 self.addEventListener('install', (event) => {

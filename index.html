@@ -7,26 +7,15 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#06080f">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Inter & JetBrains Mono Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          }
-        }
-      }
-    }
-  </script>
   <style>
+    /* Fonts are bundled with the app (fonts/ folder) so it works fully offline. */
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff') format('woff'); }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/inter-600.woff') format('woff'); }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/inter-700.woff') format('woff'); }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; font-display: swap; src: url('fonts/inter-800.woff') format('woff'); }
+    @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 100 500; font-display: swap; src: url('fonts/jetbrains-mono-400.woff') format('woff'); }
+    @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 600 900; font-display: swap; src: url('fonts/jetbrains-mono-700.woff') format('woff'); }
+
     /* ---------- Page layout ----------
        Phones: the console fills the whole screen (width and height).
        Wider screens (PC, tablet, landscape): a centered, phone-proportioned card with a capped size. */
@@ -199,6 +188,9 @@
       animation: timerAlarmPulse 0.55s infinite ease-in-out;
     }
   </style>
+  <!-- Tailwind CSS v3.4.17, pre-generated from the classes this page uses (no CDN, works offline).
+       If you add new Tailwind classes, the file needs regenerating. -->
+  <link rel="stylesheet" href="tailwind.css">
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans">
 
