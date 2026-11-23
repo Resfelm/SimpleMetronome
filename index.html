@@ -56,7 +56,7 @@
          (An explicit height is needed for the container-relative sizing to work.) */
       height: calc(100vh - max(6px, env(safe-area-inset-top)) - max(6px, env(safe-area-inset-bottom)));
       height: calc(100dvh - max(6px, env(safe-area-inset-top)) - max(6px, env(safe-area-inset-bottom)));
-      min-height: 340px;
+      min-height: 480px;       /* shorter screens (e.g. phone held sideways) scroll instead of squashing */
       display: flex;
       flex-direction: column;
       gap: clamp(5px, 1.1vh, 12px);
@@ -74,11 +74,11 @@
     }
 
     /* Rows share the console height in these proportions */
-    .row-beats { flex: 0.75 1 0; }
-    .row-bpm   { flex: 2.4 1 0;  }
-    .row-mid   { flex: 3 1 0;    }
-    .row-timer { flex: 0.95 1 0; }
-    .row-play  { flex: 1.2 1 0;  display: flex; }
+    .row-beats { flex: 0.7 1 0; }
+    .row-bpm   { flex: 2.2 1 0; }
+    .row-mid   { flex: 2.5 1 0; }
+    .row-timer { flex: 2.1 1 0; }
+    .row-play  { flex: 1.0 1 0; display: flex; }
 
     /* ---------- Scalable text ---------- */
     .lbl    { font-size: max(9px, calc(var(--u) * 1.7)); line-height: 1; }
@@ -104,30 +104,76 @@
     .bpm-number-text { font-size: max(1.8rem, calc(var(--u) * 11)); }
     .bpm-caption { font-size: max(8px, calc(var(--u) * 1.5)); margin-top: 0.5em; }
 
-    /* ---------- Row 3: time signature + volume ---------- */
+    /* ---------- Row 3: time signature + volume/brightness ---------- */
     .row-mid { gap: calc(var(--u) * 1.2); }
     .card { padding: calc(var(--u) * 1.4); gap: var(--u); }
     .ts-arrow-btn { width: max(1.8rem, calc(var(--u) * 8)); height: max(1.6rem, min(calc(var(--v) * 5.5), calc(var(--u) * 9))); font-size: max(12px, calc(var(--u) * 2.6)); }
     .ts-number-text { font-size: max(1.1rem, calc(var(--u) * 7.5)); }
     .ts-divider { width: 45%; height: 2px; margin: calc(var(--v) * 1.2) 0; }
-    .vol-cycle-btn { padding: calc(var(--u) * 1) calc(var(--u) * 1.4); gap: var(--u); min-height: max(2rem, calc(var(--u) * 6)); max-height: calc(var(--v) * 11); }
     .vol-icon { width: max(20px, calc(var(--u) * 4.5)); height: max(20px, calc(var(--u) * 4.5)); }
     .vol-svg  { width: 65%; height: 65%; }
-    .vol-text { font-size: max(11px, calc(var(--u) * 2.6)); }
-    .vol-number { font-size: max(12px, calc(var(--u) * 3.4)); }
-    .vol-max { font-size: max(9px, calc(var(--u) * 1.6)); }
-    .vol-body { gap: var(--u); }
-    .vol-pills { gap: max(4px, calc(var(--u) * 0.7)); }
-    .vol-step-btn { height: max(20px, min(calc(var(--v) * 5), calc(var(--u) * 8))); font-size: max(10px, calc(var(--u) * 2)); }
+    .slider-group { gap: calc(var(--u) * 0.6); }
+    .slider-head { gap: calc(var(--u) * 1); }
+
+    /* Range sliders (volume & brightness) */
+    .range {
+      --fill: #10b981;
+      --pct: 50%;
+      --track: max(8px, calc(var(--u) * 1.4));
+      --thumb: max(22px, calc(var(--u) * 4.4));
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      height: max(30px, min(calc(var(--v) * 5.5), calc(var(--u) * 8)));
+      margin: 0;
+      cursor: pointer;
+      touch-action: pan-y;
+    }
+    .range-brightness { --fill: #f59e0b; }
+    .range.range-muted { --fill: #475569; }
+    .range:focus { outline: none; }
+    .range::-webkit-slider-runnable-track {
+      height: var(--track);
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: linear-gradient(to right, var(--fill) 0 var(--pct), #1e293b var(--pct) 100%);
+    }
+    .range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: var(--thumb);
+      height: var(--thumb);
+      margin-top: calc((var(--track) - var(--thumb)) / 2 - 1px);
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 3px solid var(--fill);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+    .range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.5); }
+    .range::-moz-range-track { height: var(--track); border-radius: 999px; border: 1px solid #334155; background: #1e293b; }
+    .range::-moz-range-progress { height: var(--track); border-radius: 999px; background: var(--fill); }
+    .range::-moz-range-thumb { width: var(--thumb); height: var(--thumb); border-radius: 50%; background: #f8fafc; border: 3px solid var(--fill); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
 
     /* ---------- Row 4: practice timer ---------- */
-    .row-timer { padding: calc(var(--u) * 0.8) calc(var(--u) * 1.6); gap: var(--u); }
-    .timer-adjuster { gap: calc(var(--u) * 0.6); padding: calc(var(--u) * 0.5) calc(var(--u) * 0.8); }
-    .timer-arrow { width: max(24px, calc(var(--u) * 5)); height: max(24px, min(calc(var(--v) * 5.5), calc(var(--u) * 8))); font-size: max(12px, calc(var(--u) * 2.2)); }
-    .timer-display { font-size: max(14px, calc(var(--u) * 3.3)); }
-    .timer-main-btn { height: max(28px, min(calc(var(--v) * 6), calc(var(--u) * 9))); padding: 0 calc(var(--u) * 1.7); font-size: max(10px, calc(var(--u) * 1.8)); }
-    .timer-reset { width: max(28px, calc(var(--u) * 6.5)); height: max(28px, min(calc(var(--v) * 6), calc(var(--u) * 9))); }
-    .timer-reset svg { width: 50%; height: 50%; }
+    .row-timer { padding: calc(var(--u) * 1.2) calc(var(--u) * 1.4); gap: max(5px, calc(var(--v) * 0.9)); }
+    .timer-adjuster { flex: 1 1 auto; min-height: 38px; gap: calc(var(--u) * 0.7); padding: calc(var(--u) * 0.6); }
+    .timer-arrow { width: clamp(2.3rem, 11cqw, 4.25rem); }
+    .timer-display { font-size: max(18px, calc(var(--u) * 5.6)); }
+    .timer-controls { flex: 0 0 auto; gap: calc(var(--u) * 0.8); height: max(32px, min(calc(var(--v) * 6), calc(var(--u) * 9))); }
+    .timer-main-btn { font-size: max(11px, calc(var(--u) * 2.1)); }
+    .timer-reset { width: max(36px, calc(var(--u) * 9)); }
+    .timer-reset svg { width: max(14px, calc(var(--u) * 2.6)); height: max(14px, calc(var(--u) * 2.6)); }
+
+    /* Full-console beat flash (driven by JS, strength = brightness slider) */
+    .beat-flash {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      z-index: 30;
+    }
 
     /* ---------- Row 5: start / stop ---------- */
     .start-btn { font-size: max(14px, calc(var(--u) * 2.8)); gap: 0.6em; }
@@ -163,12 +209,12 @@
       transform: scale(1.12);
     }
 
-    /* Subtle console border pulse on beat */
+    /* Console border pulse on beat (strength follows the brightness slider) */
     .panel-flash-accent {
-      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.65), 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+      box-shadow: 0 0 0 2px rgb(245 158 11 / calc(0.9 * var(--flash, 0.6))), 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
     }
     .panel-flash-regular {
-      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5), 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+      box-shadow: 0 0 0 2px rgb(16 185 129 / calc(0.8 * var(--flash, 0.6))), 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
     }
 
     /* Practice Timer completion alarm flash */
@@ -190,7 +236,7 @@
   </style>
   <!-- Tailwind CSS v3.4.17, pre-generated from the classes this page uses (no CDN, works offline).
        If you add new Tailwind classes, the file needs regenerating. -->
-  <link rel="stylesheet" href="tailwind.css">
+  <link rel="stylesheet" href="tailwind.css?v=4">
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans">
 
@@ -343,104 +389,102 @@
         </div>
       </div>
 
-      <!-- Right Card: Volume Control (0 to 5) -->
-      <div class="card bg-slate-950 border border-slate-800 rounded-xl flex flex-col min-w-0">
-        <div class="flex items-center justify-between gap-1">
-          <span class="lbl font-bold uppercase tracking-wider text-slate-400">Volume</span>
-          <span id="volumeStatusBadge" class="lbl font-mono font-bold text-emerald-400">Lvl 4/5</span>
-        </div>
+      <!-- Right Card: Volume & Brightness sliders -->
+      <div class="card bg-slate-950 border border-slate-800 rounded-xl flex flex-col justify-evenly min-w-0">
 
-        <div class="vol-body flex-1 flex flex-col justify-center">
-          <!-- Main Interactive Volume Button (Cycles 0 -> 5 on tap) -->
-          <button
-            id="volumeCycleBtn"
-            type="button"
-            title="Tap to cycle volume (0 = Mute to 5 = Max)"
-            aria-label="Cycle Volume Level"
-            class="tactile-btn vol-cycle-btn flex-1 w-full rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 flex items-center justify-between"
-          >
-            <div class="flex items-center gap-1.5 min-w-0">
+        <!-- Volume: far left = muted, far right = loudest -->
+        <div class="slider-group flex flex-col">
+          <div class="flex items-center justify-between gap-1">
+            <div class="slider-head flex items-center min-w-0">
               <div id="volumeIconWrapper" class="vol-icon rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0">
                 <svg id="volumeSvg" xmlns="http://www.w3.org/2000/svg" class="vol-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
                 </svg>
               </div>
-              <span class="vol-text font-bold text-white truncate">Vol</span>
+              <label for="volumeSlider" class="lbl font-bold uppercase tracking-wider text-slate-300 truncate">Volume</label>
             </div>
-
-            <div class="flex items-baseline gap-0.5 bg-slate-950 border border-slate-800 px-1.5 py-0.5 rounded shrink-0">
-              <span id="volumeNumberDisplay" class="vol-number font-mono font-extrabold text-amber-400 tabular-nums">4</span>
-              <span class="vol-max font-mono text-slate-500 font-bold">/5</span>
-            </div>
-          </button>
-
-          <!-- Direct Level Selector Pills (0 to 5) -->
-          <div class="vol-pills grid grid-cols-6 w-full" role="group" aria-label="Direct volume levels">
-            <button type="button" data-vol="0" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">0</button>
-            <button type="button" data-vol="1" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">1</button>
-            <button type="button" data-vol="2" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">2</button>
-            <button type="button" data-vol="3" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">3</button>
-            <button type="button" data-vol="4" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">4</button>
-            <button type="button" data-vol="5" class="vol-step-btn tactile-btn rounded font-mono font-bold border transition-all">5</button>
+            <span id="volumeValue" class="lbl font-mono font-bold text-emerald-400 tabular-nums">85%</span>
           </div>
+          <input id="volumeSlider" type="range" min="0" max="100" step="1" value="85" class="range range-volume w-full" aria-label="Volume">
         </div>
+
+        <!-- Brightness: strength of the beat flash; far left = no flash -->
+        <div class="slider-group flex flex-col">
+          <div class="flex items-center justify-between gap-1">
+            <div class="slider-head flex items-center min-w-0">
+              <div id="brightnessIconWrapper" class="vol-icon rounded bg-slate-900 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="vol-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18h6" />
+                  <path d="M10 22h4" />
+                  <path d="M15.1 14c.2-1 .7-1.7 1.5-2.5A5.9 5.9 0 0 0 18 7.9 6 6 0 0 0 6 8c0 1.4.5 2.6 1.4 3.5.8.8 1.3 1.5 1.5 2.5" />
+                </svg>
+              </div>
+              <label for="brightnessSlider" class="lbl font-bold uppercase tracking-wider text-slate-300 truncate">Brightness</label>
+            </div>
+            <span id="brightnessValue" class="lbl font-mono font-bold text-amber-400 tabular-nums">60%</span>
+          </div>
+          <input id="brightnessSlider" type="range" min="0" max="100" step="1" value="60" class="range range-brightness w-full" aria-label="Beat flash brightness">
+        </div>
+
       </div>
 
     </section>
 
-    <!-- ROW 4: Practice Countdown Timer Bar -->
+    <!-- ROW 4: Practice Countdown Timer -->
     <section
       id="timerSection"
       aria-label="Practice Countdown Timer"
-      class="row-timer bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between transition-colors"
+      class="row-timer bg-slate-950 border border-slate-800 rounded-xl flex flex-col transition-colors"
     >
-      <!-- Timer Label & Status Indicator -->
-      <div class="flex items-center gap-1.5 shrink-0">
-        <span id="timerStatusDot" class="pulse-dot rounded-full bg-slate-700 transition-all"></span>
-        <div class="flex flex-col gap-1">
+      <!-- Header: label & status -->
+      <div class="flex items-center justify-between gap-1">
+        <div class="flex items-center gap-1.5">
+          <span id="timerStatusDot" class="pulse-dot rounded-full bg-slate-700 transition-all"></span>
           <span class="lbl font-bold uppercase tracking-wider text-slate-400">Timer</span>
-          <span id="timerStateSubtext" class="lbl-xs font-mono text-cyan-400 font-semibold">MIN:SEC</span>
         </div>
+        <span id="timerStateSubtext" class="lbl-xs font-mono text-slate-400 font-semibold">READY</span>
       </div>
 
-      <!-- Minute Adjuster & Countdown Readout: [<] [MM:SS] [>] -->
-      <div class="timer-adjuster flex items-center bg-slate-900/90 border border-slate-800/90 rounded-lg">
-        <button
-          id="timerDecBtn"
-          type="button"
-          title="Decrease timer by 1 minute"
-          aria-label="Decrease timer by 1 minute"
-          class="tactile-btn timer-arrow rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
-        >
-          &lt;
+      <!-- Adjusters & readout: [-1 min] [-5 sec] [MM:SS] [+5 sec] [+1 min] -->
+      <div class="timer-adjuster flex items-stretch bg-slate-900/90 border border-slate-800/90 rounded-lg">
+        <button id="timerDecBtn" type="button" title="Decrease timer by 1 minute" aria-label="Decrease timer by 1 minute"
+          class="tactile-btn timer-arrow flex flex-col items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+          <span class="arrow-glyph font-mono font-bold leading-none tracking-tighter">&lt;&lt;</span>
+          <span class="arrow-sub font-semibold text-slate-400 leading-none">-1m</span>
+        </button>
+        <button id="timerDec5Btn" type="button" title="Decrease timer by 5 seconds" aria-label="Decrease timer by 5 seconds"
+          class="tactile-btn timer-arrow flex flex-col items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+          <span class="arrow-glyph font-mono font-bold leading-none">&lt;</span>
+          <span class="arrow-sub font-semibold text-slate-400 leading-none">-5s</span>
         </button>
 
         <div
           id="timerDisplay"
-          class="timer-display font-mono font-extrabold text-white tabular-nums px-1 tracking-tight select-none"
+          class="timer-display flex-1 min-w-0 flex items-center justify-center font-mono font-extrabold text-white tabular-nums tracking-tight select-none"
           aria-live="polite"
         >
           05:00
         </div>
 
-        <button
-          id="timerIncBtn"
-          type="button"
-          title="Increase timer by 1 minute"
-          aria-label="Increase timer by 1 minute"
-          class="tactile-btn timer-arrow rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 font-mono font-bold text-slate-100 flex items-center justify-center disabled:opacity-40 shrink-0"
-        >
-          &gt;
+        <button id="timerInc5Btn" type="button" title="Increase timer by 5 seconds" aria-label="Increase timer by 5 seconds"
+          class="tactile-btn timer-arrow flex flex-col items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+          <span class="arrow-glyph font-mono font-bold leading-none">&gt;</span>
+          <span class="arrow-sub font-semibold text-slate-400 leading-none">+5s</span>
+        </button>
+        <button id="timerIncBtn" type="button" title="Increase timer by 1 minute" aria-label="Increase timer by 1 minute"
+          class="tactile-btn timer-arrow flex flex-col items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+          <span class="arrow-glyph font-mono font-bold leading-none tracking-tighter">&gt;&gt;</span>
+          <span class="arrow-sub font-semibold text-slate-400 leading-none">+1m</span>
         </button>
       </div>
 
-      <!-- Separate Timer Start/Pause & Reset Controls -->
-      <div class="flex items-center gap-1 shrink-0">
+      <!-- Start/Pause & Reset, below the readout -->
+      <div class="timer-controls flex items-stretch">
         <button
           id="timerStartPauseBtn"
           type="button"
-          class="tactile-btn timer-main-btn rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all"
+          class="tactile-btn timer-main-btn flex-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all"
         >
           <span id="timerStartPauseText">Start Timer</span>
         </button>
@@ -450,7 +494,7 @@
           type="button"
           title="Reset Timer"
           aria-label="Reset Timer"
-          class="tactile-btn timer-reset rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-300 flex items-center justify-center"
+          class="tactile-btn timer-reset rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -476,6 +520,9 @@
       </button>
     </section>
 
+    <!-- Full-console beat flash overlay -->
+    <div id="beatFlash" class="beat-flash" aria-hidden="true"></div>
+
   </main>
 
   <!-- Application Logic & Web Audio API Scheduler -->
@@ -489,12 +536,24 @@
       const MIN_TOP_TS = 1;
       const MAX_TOP_TS = 16;
       const NOTE_VALUES = [1, 2, 4, 8, 16];
-      const MIN_TIMER_MINS = 1;
-      const MAX_TIMER_MINS = 90;
+      const MIN_TIMER_SEC = 5;
+      const MAX_TIMER_SEC = 90 * 60;
+      const ALARM_VISUAL_MS = 3000;   // how long the "TIME UP" flash stays before the timer resets
+
+      // Sound shaping. The click is driven hard into a compressor + soft clipper so it is loud
+      // without distorting; the volume slider is applied AFTER that, so it fades evenly to silence.
+      // Max volume is ~2.8 dB louder than the old "level 5".
+      const CLICK_DRIVE = 4.5;
+      const CLICK_DECAY_SEC = 0.08;
+      const BEEP_DRIVE = 1.0;
+
+      // Beat flash: peak opacity of the full-console flash at 100% brightness
+      const FLASH_MAX_OPACITY = 0.6;
 
       const state = {
         bpm: 120,
-        volume: 4,             // Range: 0 (muted) to 5 (loudest)
+        volume: 85,            // 0 (muted) to 100 (loudest)
+        brightness: 60,        // 0 (no flash) to 100 (strongest flash)
         beatsPerMeasure: 4,    // Top number of time signature
         beatUnitIndex: 2,      // Index in NOTE_VALUES (2 -> 4, i.e., quarter note)
         isPlaying: false,
@@ -503,13 +562,14 @@
         timerID: null,
         visualQueue: [],
         // Practice Countdown Timer State
-        timerMinutes: 5,
+        timerPresetSec: 5 * 60,   // the time the timer resets to
         timerRemainingSec: 5 * 60,
         timerRunning: false,
+        timerPaused: false,
         timerEndTimeMs: 0,
         timerIntervalID: null,
         timerAlarmActive: false,
-        alarmRepeatID: null
+        alarmTimeoutID: null
       };
 
       let audioCtx = null;
@@ -518,6 +578,7 @@
 
       // --- DOM Elements ---
       const metronomeConsole = document.getElementById('metronomeConsole');
+      const beatFlash = document.getElementById('beatFlash');
       const headerPulseDot = document.getElementById('headerPulseDot');
       const tempoMarking = document.getElementById('tempoMarking');
       const headerMeterBadge = document.getElementById('headerMeterBadge');
@@ -539,20 +600,23 @@
       const tsBottomDecBtn = document.getElementById('tsBottomDecBtn');
       const tsBottomIncBtn = document.getElementById('tsBottomIncBtn');
 
-      // Volume elements
-      const volumeCycleBtn = document.getElementById('volumeCycleBtn');
-      const volumeNumberDisplay = document.getElementById('volumeNumberDisplay');
-      const volumeStatusBadge = document.getElementById('volumeStatusBadge');
+      // Volume & brightness elements
+      const volumeSlider = document.getElementById('volumeSlider');
+      const volumeValue = document.getElementById('volumeValue');
       const volumeIconWrapper = document.getElementById('volumeIconWrapper');
       const volumeSvg = document.getElementById('volumeSvg');
-      const volStepBtns = document.querySelectorAll('.vol-step-btn');
+      const brightnessSlider = document.getElementById('brightnessSlider');
+      const brightnessValue = document.getElementById('brightnessValue');
+      const brightnessIconWrapper = document.getElementById('brightnessIconWrapper');
 
       // Practice Timer elements
       const timerSection = document.getElementById('timerSection');
       const timerStatusDot = document.getElementById('timerStatusDot');
       const timerStateSubtext = document.getElementById('timerStateSubtext');
-      const timerDecBtn = document.getElementById('timerDecBtn');
-      const timerIncBtn = document.getElementById('timerIncBtn');
+      const timerDecBtn = document.getElementById('timerDecBtn');     // -1 min
+      const timerDec5Btn = document.getElementById('timerDec5Btn');   // -5 sec
+      const timerInc5Btn = document.getElementById('timerInc5Btn');   // +5 sec
+      const timerIncBtn = document.getElementById('timerIncBtn');     // +1 min
       const timerDisplay = document.getElementById('timerDisplay');
       const timerStartPauseBtn = document.getElementById('timerStartPauseBtn');
       const timerStartPauseText = document.getElementById('timerStartPauseText');
@@ -625,45 +689,45 @@
         }
       }
 
+      const SPEAKER_PATH = '<path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />';
+
       function updateVolumeUI() {
-        volumeNumberDisplay.textContent = state.volume;
+        const v = state.volume;
+        volumeSlider.value = v;
+        volumeSlider.style.setProperty('--pct', v + '%');
+        volumeSlider.classList.toggle('range-muted', v === 0);
 
-        if (state.volume === 0) {
-          volumeStatusBadge.textContent = 'Muted';
-          volumeStatusBadge.className = 'lbl font-mono font-bold text-rose-400';
+        if (v === 0) {
+          volumeValue.textContent = 'Muted';
+          volumeValue.className = 'lbl font-mono font-bold text-rose-400 tabular-nums';
           volumeIconWrapper.className = 'vol-icon rounded bg-slate-900 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0';
-          volumeSvg.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M23 9l-6 6m0-6l6 6" />
-          `;
+          volumeSvg.innerHTML = SPEAKER_PATH + '<path stroke-linecap="round" stroke-linejoin="round" d="M23 9l-6 6m0-6l6 6" />';
         } else {
-          volumeStatusBadge.textContent = `Lvl ${state.volume}/5`;
-          volumeStatusBadge.className = 'lbl font-mono font-bold text-emerald-400';
+          volumeValue.textContent = v + '%';
+          volumeValue.className = 'lbl font-mono font-bold text-emerald-400 tabular-nums';
           volumeIconWrapper.className = 'vol-icon rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0';
-          
-          if (state.volume <= 2) {
-            volumeSvg.innerHTML = `
-              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07" />
-            `;
-          } else {
-            volumeSvg.innerHTML = `
-              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
-            `;
-          }
+          volumeSvg.innerHTML = v <= 40
+            ? SPEAKER_PATH + '<path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07" />'
+            : SPEAKER_PATH + '<path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />';
         }
+      }
 
-        volStepBtns.forEach((btn) => {
-          const btnVol = parseInt(btn.dataset.vol, 10);
-          if (btnVol === state.volume) {
-            btn.className = 'vol-step-btn tactile-btn rounded font-mono font-bold border bg-amber-500 text-slate-950 border-amber-400 shadow';
-          } else if (btnVol < state.volume && state.volume > 0) {
-            btn.className = 'vol-step-btn tactile-btn rounded font-mono font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-          } else {
-            btn.className = 'vol-step-btn tactile-btn rounded font-mono font-bold border bg-slate-900 text-slate-400 border-slate-800';
-          }
-        });
+      function updateBrightnessUI() {
+        const b = state.brightness;
+        brightnessSlider.value = b;
+        brightnessSlider.style.setProperty('--pct', b + '%');
+        brightnessSlider.classList.toggle('range-muted', b === 0);
+        metronomeConsole.style.setProperty('--flash', String(b / 100));
+
+        if (b === 0) {
+          brightnessValue.textContent = 'Off';
+          brightnessValue.className = 'lbl font-mono font-bold text-slate-500 tabular-nums';
+          brightnessIconWrapper.className = 'vol-icon rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-500 shrink-0';
+        } else {
+          brightnessValue.textContent = b + '%';
+          brightnessValue.className = 'lbl font-mono font-bold text-amber-400 tabular-nums';
+          brightnessIconWrapper.className = 'vol-icon rounded bg-slate-900 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0';
+        }
       }
 
       function updatePlaybackUI() {
@@ -696,114 +760,111 @@
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
       }
 
+      const TIMER_BTN_BASE = 'tactile-btn timer-main-btn flex-1 rounded-lg text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all ';
+      const TIMER_BTN_CYAN = TIMER_BTN_BASE + 'bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600';
+      const TIMER_BTN_AMBER = TIMER_BTN_BASE + 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600';
+
       function updateTimerUI() {
         timerDisplay.textContent = formatSecondsMMSS(state.timerRemainingSec);
 
-        // Disable minute adjustment arrows if already at bounds
-        const currentMins = Math.ceil(state.timerRemainingSec / 60);
-        timerDecBtn.disabled = currentMins <= MIN_TIMER_MINS && state.timerRemainingSec <= 60;
-        timerIncBtn.disabled = currentMins >= MAX_TIMER_MINS;
+        const shown = state.timerRemainingSec;
+        const atMin = shown <= MIN_TIMER_SEC;
+        const atMax = shown >= MAX_TIMER_SEC;
+        timerDecBtn.disabled = atMin;
+        timerDec5Btn.disabled = atMin;
+        timerIncBtn.disabled = atMax;
+        timerInc5Btn.disabled = atMax;
 
         if (state.timerAlarmActive) {
           timerSection.classList.add('timer-alarm-active');
           timerStatusDot.className = 'pulse-dot rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]';
           timerStateSubtext.textContent = 'TIME UP!';
           timerStateSubtext.className = 'lbl-xs font-mono text-amber-300 font-bold';
-          timerStartPauseBtn.className = 'tactile-btn timer-main-btn rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
+          timerStartPauseBtn.className = TIMER_BTN_AMBER;
           timerStartPauseText.textContent = 'Stop Alarm';
         } else if (state.timerRunning) {
           timerSection.classList.remove('timer-alarm-active');
           timerStatusDot.className = 'pulse-dot rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] animate-pulse';
           timerStateSubtext.textContent = 'RUNNING';
           timerStateSubtext.className = 'lbl-xs font-mono text-cyan-400 font-semibold';
-          timerStartPauseBtn.className = 'tactile-btn timer-main-btn rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
+          timerStartPauseBtn.className = TIMER_BTN_AMBER;
           timerStartPauseText.textContent = 'Pause';
         } else {
           timerSection.classList.remove('timer-alarm-active');
           timerStatusDot.className = 'pulse-dot rounded-full bg-slate-700 transition-all';
-          const isPausedMidway = state.timerRemainingSec > 0 && state.timerRemainingSec < state.timerMinutes * 60;
-          timerStateSubtext.textContent = isPausedMidway ? 'PAUSED' : 'READY';
+          timerStateSubtext.textContent = state.timerPaused ? 'PAUSED' : 'READY';
           timerStateSubtext.className = 'lbl-xs font-mono text-slate-400 font-semibold';
-          timerStartPauseBtn.className = 'tactile-btn timer-main-btn rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-extrabold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1 transition-all';
-          timerStartPauseText.textContent = isPausedMidway ? 'Resume' : 'Start Timer';
+          timerStartPauseBtn.className = TIMER_BTN_CYAN;
+          timerStartPauseText.textContent = state.timerPaused ? 'Resume' : 'Start Timer';
         }
       }
 
-      // Synthesize a loud, unmistakable multi-tone practice completion chime
-      function playAlarmChimeBurst() {
+      // Single short "time's up" beep: a pure, sustained high tone, clearly different
+      // from the short percussive click. Its loudness follows the volume slider.
+      function playTimerBeep() {
         ensureAudioContext();
-        const now = audioCtx.currentTime;
-        // Ascending bell triad notes (C6, E6, G6, C7)
-        const notes = [1046.5, 1318.5, 1567.98, 2093.0];
+        if (state.volume <= 0) return;
+        const t = audioCtx.currentTime + 0.02;
+        const length = 0.32;
 
-        notes.forEach((freq, idx) => {
-          const startTime = now + idx * 0.11;
-          const duration = idx === notes.length - 1 ? 0.45 : 0.18;
+        const osc = audioCtx.createOscillator();
+        const overtone = audioCtx.createOscillator();
+        const overtoneGain = audioCtx.createGain();
+        const env = audioCtx.createGain();
 
-          const oscMain = audioCtx.createOscillator();
-          const oscHarmonic = audioCtx.createOscillator();
-          const noteGain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1975.5, t);        // B6
+        overtone.type = 'sine';
+        overtone.frequency.setValueAtTime(1975.5 * 2, t);
+        overtoneGain.gain.setValueAtTime(0.18, t);
 
-          oscMain.type = 'triangle';
-          oscMain.frequency.setValueAtTime(freq, startTime);
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(BEEP_DRIVE, t + 0.006);
+        env.gain.setValueAtTime(BEEP_DRIVE, t + length - 0.04);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + length);
 
-          oscHarmonic.type = 'square';
-          oscHarmonic.frequency.setValueAtTime(freq * 2, startTime);
+        osc.connect(env);
+        overtone.connect(overtoneGain);
+        overtoneGain.connect(env);
+        env.connect(masterGainNode);
 
-          const harmonicGain = audioCtx.createGain();
-          harmonicGain.gain.setValueAtTime(0.35, startTime);
-          harmonicGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-          // High gain routed into the 2.0x masterGainNode + compressor
-          noteGain.gain.setValueAtTime(0.0001, startTime);
-          noteGain.gain.linearRampToValueAtTime(1.8, startTime + 0.008);
-          noteGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-          oscMain.connect(noteGain);
-          oscHarmonic.connect(harmonicGain);
-          harmonicGain.connect(noteGain);
-          noteGain.connect(masterGainNode || audioCtx.destination);
-
-          oscMain.start(startTime);
-          oscMain.stop(startTime + duration + 0.02);
-          oscHarmonic.start(startTime);
-          oscHarmonic.stop(startTime + duration + 0.02);
-        });
+        osc.start(t);
+        overtone.start(t);
+        osc.stop(t + length + 0.02);
+        overtone.stop(t + length + 0.02);
       }
 
       function stopTimerAlarm() {
         state.timerAlarmActive = false;
-        if (state.alarmRepeatID) {
-          clearInterval(state.alarmRepeatID);
-          state.alarmRepeatID = null;
+        if (state.alarmTimeoutID) {
+          clearTimeout(state.alarmTimeoutID);
+          state.alarmTimeoutID = null;
+        }
+      }
+
+      function stopTimerInterval() {
+        if (state.timerIntervalID) {
+          clearInterval(state.timerIntervalID);
+          state.timerIntervalID = null;
         }
       }
 
       function triggerTimerCompleteAlarm() {
         state.timerRunning = false;
-        if (state.timerIntervalID) {
-          clearInterval(state.timerIntervalID);
-          state.timerIntervalID = null;
-        }
+        state.timerPaused = false;
+        stopTimerInterval();
         state.timerRemainingSec = 0;
         state.timerAlarmActive = true;
         updateTimerUI();
 
-        // Play 4 chime bursts spaced 900ms apart so the musician clearly hears it
-        let burstCount = 0;
-        playAlarmChimeBurst();
-        burstCount++;
+        playTimerBeep();
 
-        state.alarmRepeatID = setInterval(() => {
-          if (!state.timerAlarmActive || burstCount >= 4) {
-            stopTimerAlarm();
-            state.timerRemainingSec = state.timerMinutes * 60;
-            updateTimerUI();
-            return;
-          }
-          playAlarmChimeBurst();
-          burstCount++;
-        }, 900);
+        // Keep the visual alarm going for a few seconds (useful when muted), then reset.
+        state.alarmTimeoutID = setTimeout(() => {
+          stopTimerAlarm();
+          state.timerRemainingSec = state.timerPresetSec;
+          updateTimerUI();
+        }, ALARM_VISUAL_MS);
       }
 
       function tickTimer() {
@@ -820,29 +881,28 @@
       function toggleTimerStartPause() {
         ensureAudioContext();
 
-        // If alarm is currently ringing, clicking the button silences & resets it
+        // If the alarm is showing, the button silences & resets it
         if (state.timerAlarmActive) {
-          stopTimerAlarm();
-          state.timerRemainingSec = state.timerMinutes * 60;
-          updateTimerUI();
+          resetTimer();
           return;
         }
 
-        state.timerRunning = !state.timerRunning;
-
         if (state.timerRunning) {
-          if (state.timerRemainingSec <= 0) {
-            state.timerRemainingSec = state.timerMinutes * 60;
-          }
-          state.timerEndTimeMs = Date.now() + state.timerRemainingSec * 1000;
-          state.timerIntervalID = setInterval(tickTimer, 200);
-        } else {
-          if (state.timerIntervalID) {
-            clearInterval(state.timerIntervalID);
-            state.timerIntervalID = null;
-          }
+          // Pause
+          state.timerRunning = false;
+          state.timerPaused = true;
+          stopTimerInterval();
           const remainingMs = Math.max(0, state.timerEndTimeMs - Date.now());
           state.timerRemainingSec = Math.ceil(remainingMs / 1000);
+        } else {
+          // Start or resume
+          if (state.timerRemainingSec <= 0) {
+            state.timerRemainingSec = state.timerPresetSec;
+          }
+          state.timerRunning = true;
+          state.timerPaused = false;
+          state.timerEndTimeMs = Date.now() + state.timerRemainingSec * 1000;
+          state.timerIntervalID = setInterval(tickTimer, 200);
         }
 
         updateTimerUI();
@@ -850,67 +910,100 @@
 
       function resetTimer() {
         stopTimerAlarm();
+        stopTimerInterval();
         state.timerRunning = false;
-        if (state.timerIntervalID) {
-          clearInterval(state.timerIntervalID);
-          state.timerIntervalID = null;
-        }
-        state.timerRemainingSec = state.timerMinutes * 60;
+        state.timerPaused = false;
+        state.timerRemainingSec = state.timerPresetSec;
         updateTimerUI();
       }
 
-      function changeTimerMinutes(deltaMinutes) {
-        stopTimerAlarm();
-        const baseMins = state.timerRunning
-          ? Math.ceil(state.timerRemainingSec / 60)
-          : state.timerMinutes;
-        const nextMins = Math.min(MAX_TIMER_MINS, Math.max(MIN_TIMER_MINS, baseMins + deltaMinutes));
+      // Adjust the time shown by deltaSec (±60 for the outer arrows, ±5 for the inner ones).
+      // When the timer is idle this sets the preset (what Reset returns to);
+      // while running or paused it adjusts the remaining time.
+      function changeTimer(deltaSec) {
+        if (state.timerAlarmActive) {
+          stopTimerAlarm();
+          state.timerRemainingSec = state.timerPresetSec;
+        }
 
-        state.timerMinutes = nextMins;
-        state.timerRemainingSec = nextMins * 60;
+        const current = state.timerRunning
+          ? Math.max(0, Math.ceil((state.timerEndTimeMs - Date.now()) / 1000))
+          : state.timerRemainingSec;
+        const floor = Math.min(MIN_TIMER_SEC, current);
+        const next = Math.min(MAX_TIMER_SEC, Math.max(floor, current + deltaSec));
 
+        state.timerRemainingSec = next;
         if (state.timerRunning) {
-          state.timerEndTimeMs = Date.now() + state.timerRemainingSec * 1000;
+          state.timerEndTimeMs = Date.now() + next * 1000;
+        } else if (!state.timerPaused) {
+          state.timerPresetSec = next;
         }
         updateTimerUI();
       }
 
       // --- Web Audio API Sound Synthesis & Lookahead Scheduler ---
-      let masterGainNode = null;
+      let masterGainNode = null;   // input of the output chain (all sounds connect here)
       let compressorNode = null;
+      let volumeGainNode = null;   // user volume, applied last
+
+      // Slider position (0–100) -> output gain. Squared taper sounds even across the range.
+      function volumeToGain(v) {
+        const x = Math.max(0, Math.min(100, v)) / 100;
+        return x * x;
+      }
 
       function ensureAudioContext() {
         if (!audioCtx) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           audioCtx = new AudioContextClass();
+          const now = audioCtx.currentTime;
 
-          // Master 2.0x boost stage
+          // Output chain: boost -> compressor -> soft clipper -> volume -> speakers
           masterGainNode = audioCtx.createGain();
-          masterGainNode.gain.setValueAtTime(2.0, audioCtx.currentTime);
+          masterGainNode.gain.setValueAtTime(2.0, now);
 
-          // Gentle dynamics compressor / limiter so the 2x volume boost stays punchy without clipping
           compressorNode = audioCtx.createDynamicsCompressor();
-          compressorNode.threshold.setValueAtTime(-3.0, audioCtx.currentTime);
-          compressorNode.knee.setValueAtTime(6.0, audioCtx.currentTime);
-          compressorNode.ratio.setValueAtTime(12.0, audioCtx.currentTime);
-          compressorNode.attack.setValueAtTime(0.001, audioCtx.currentTime);
-          compressorNode.release.setValueAtTime(0.05, audioCtx.currentTime);
+          compressorNode.threshold.setValueAtTime(-3.0, now);
+          compressorNode.knee.setValueAtTime(6.0, now);
+          compressorNode.ratio.setValueAtTime(12.0, now);
+          compressorNode.attack.setValueAtTime(0.001, now);
+          compressorNode.release.setValueAtTime(0.05, now);
+
+          // Soft clipper: catches the peaks the compressor lets through, so nothing hard-clips
+          const clipperInput = audioCtx.createGain();
+          clipperInput.gain.setValueAtTime(0.5, now);
+          const softClipper = audioCtx.createWaveShaper();
+          const curve = new Float32Array(2048);
+          for (let i = 0; i < curve.length; i++) {
+            const x = (i / (curve.length - 1)) * 2 - 1;
+            curve[i] = Math.tanh(2 * x);
+          }
+          softClipper.curve = curve;
+          softClipper.oversample = '4x';
+
+          volumeGainNode = audioCtx.createGain();
+          volumeGainNode.gain.setValueAtTime(volumeToGain(state.volume), now);
 
           masterGainNode.connect(compressorNode);
-          compressorNode.connect(audioCtx.destination);
+          compressorNode.connect(clipperInput);
+          clipperInput.connect(softClipper);
+          softClipper.connect(volumeGainNode);
+          volumeGainNode.connect(audioCtx.destination);
         }
         if (audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
       }
 
+      function applyVolumeToAudio() {
+        if (!audioCtx || !volumeGainNode) return;
+        volumeGainNode.gain.setTargetAtTime(volumeToGain(state.volume), audioCtx.currentTime, 0.015);
+      }
+
       function scheduleClickSound(beatIndex, time) {
         if (state.volume <= 0) return;
 
-        // Doubled gain multipliers for active levels 1–5 (was [0, 0.08, 0.2, 0.4, 0.7, 1.0])
-        const gainMap = [0, 0.16, 0.4, 0.8, 1.4, 2.0];
-        const peakGain = gainMap[state.volume] || 1.0;
-
+        const peakGain = CLICK_DRIVE;
         const isAccent = beatIndex === 0;
         const osc = audioCtx.createOscillator();
         const transientOsc = audioCtx.createOscillator();
@@ -933,16 +1026,16 @@
 
         gainNode.gain.setValueAtTime(0.0001, time);
         gainNode.gain.linearRampToValueAtTime(peakGain, time + 0.0015);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, time + CLICK_DECAY_SEC);
 
         osc.connect(gainNode);
         transientOsc.connect(transientGain);
         transientGain.connect(gainNode);
 
-        gainNode.connect(masterGainNode || audioCtx.destination);
+        gainNode.connect(masterGainNode);
 
         osc.start(time);
-        osc.stop(time + 0.05);
+        osc.stop(time + CLICK_DECAY_SEC + 0.005);
         transientOsc.start(time);
         transientOsc.stop(time + 0.015);
       }
@@ -974,6 +1067,21 @@
         metronomeConsole.classList.remove('panel-flash-accent', 'panel-flash-regular');
       }
 
+      // Flash the whole console background (amber on beat 1, green on the others).
+      // Strength follows the brightness slider; 0 = no flash at all.
+      function flashConsole(isAccent) {
+        const strength = state.brightness / 100;
+        if (strength <= 0) return;
+        const bottomValue = NOTE_VALUES[state.beatUnitIndex];
+        const beatMs = (60000 / state.bpm) * (4 / bottomValue);
+        beatFlash.style.backgroundColor = isAccent ? '#f59e0b' : '#10b981';
+        beatFlash.getAnimations().forEach((a) => a.cancel());
+        beatFlash.animate(
+          [{ opacity: strength * FLASH_MAX_OPACITY }, { opacity: 0 }],
+          { duration: Math.max(70, Math.min(260, beatMs * 0.6)), easing: 'cubic-bezier(0.2, 0.6, 0.35, 1)' }
+        );
+      }
+
       function triggerBeatVisual(beatIndex) {
         clearBeatVisuals();
 
@@ -985,7 +1093,10 @@
           targetNode.classList.add(isAccent ? 'beat-accent-active' : 'beat-regular-active');
         }
 
-        metronomeConsole.classList.add(isAccent ? 'panel-flash-accent' : 'panel-flash-regular');
+        flashConsole(isAccent);
+        if (state.brightness > 0) {
+          metronomeConsole.classList.add(isAccent ? 'panel-flash-accent' : 'panel-flash-regular');
+        }
         headerPulseDot.className = isAccent
           ? 'pulse-dot rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] scale-125 transition-all duration-75'
           : 'pulse-dot rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] scale-110 transition-all duration-75';
@@ -1063,8 +1174,14 @@
       }
 
       function setVolume(newVolume) {
-        state.volume = Math.min(5, Math.max(0, newVolume));
+        state.volume = Math.min(100, Math.max(0, Math.round(newVolume)));
         updateVolumeUI();
+        applyVolumeToAudio();
+      }
+
+      function setBrightness(newBrightness) {
+        state.brightness = Math.min(100, Math.max(0, Math.round(newBrightness)));
+        updateBrightnessUI();
       }
 
       // --- Event Listeners ---
@@ -1078,30 +1195,26 @@
       tsBottomDecBtn.addEventListener('click', () => changeBottomTimeSignature(-1));
       tsBottomIncBtn.addEventListener('click', () => changeBottomTimeSignature(1));
 
-      volumeCycleBtn.addEventListener('click', () => {
-        const nextVol = (state.volume + 1) % 6;
-        setVolume(nextVol);
-      });
-
-      volStepBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const vol = parseInt(btn.dataset.vol, 10);
-          setVolume(vol);
-        });
-      });
+      volumeSlider.addEventListener('input', () => setVolume(Number(volumeSlider.value)));
+      brightnessSlider.addEventListener('input', () => setBrightness(Number(brightnessSlider.value)));
 
       // Practice Timer Event Listeners
-      timerDecBtn.addEventListener('click', () => changeTimerMinutes(-1));
-      timerIncBtn.addEventListener('click', () => changeTimerMinutes(1));
+      timerDecBtn.addEventListener('click', () => changeTimer(-60));
+      timerDec5Btn.addEventListener('click', () => changeTimer(-5));
+      timerInc5Btn.addEventListener('click', () => changeTimer(5));
+      timerIncBtn.addEventListener('click', () => changeTimer(60));
       timerStartPauseBtn.addEventListener('click', toggleTimerStartPause);
       timerResetBtn.addEventListener('click', resetTimer);
 
       startStopBtn.addEventListener('click', toggleStartStop);
 
       window.addEventListener('keydown', (e) => {
+        const onSlider = e.target && e.target.type === 'range';
         if (e.code === 'Space') {
           e.preventDefault();
           toggleStartStop();
+        } else if (onSlider) {
+          return; // let arrow keys move the focused slider
         } else if (e.code === 'ArrowLeft') {
           e.preventDefault();
           changeBpm(-1);
@@ -1121,6 +1234,7 @@
       updateBpmUI();
       updateTimeSignatureUI();
       updateVolumeUI();
+      updateBrightnessUI();
       updateTimerUI();
       updatePlaybackUI();
 

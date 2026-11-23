@@ -1,10 +1,10 @@
 // Bump this version whenever the app's files change, so old caches get cleared.
-const CACHE_NAME = 'metronome-v3';
+const CACHE_NAME = 'metronome-v4';
 // Everything the app needs, so it runs fully offline once installed.
 const ASSETS = [
   './',
   './index.html',
-  './tailwind.css',
+  './tailwind.css?v=4',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
