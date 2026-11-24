@@ -1,6 +1,6 @@
 {
-  "name": "Studio Metronome",
-  "short_name": "Metronome",
+  "name": "Simple Metronome",
+  "short_name": "Simple Metronome",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

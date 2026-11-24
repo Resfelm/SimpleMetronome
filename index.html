@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Precision Studio Metronome</title>
+  <title>Simple Metronome</title>
+  <meta name="application-name" content="Simple Metronome">
+  <meta name="apple-mobile-web-app-title" content="Simple Metronome">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#06080f">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -614,7 +616,7 @@
       // Max volume is ~2.8 dB louder than the old "level 5".
       const CLICK_DRIVE = 4.5;
       const CLICK_DECAY_SEC = 0.08;
-      const BEEP_DRIVE = 1.0;
+      const CHIME_DRIVE = 0.75;
 
       // Beat flash: peak opacity of the console-background flash at 100% brightness
       const FLASH_MAX_OPACITY = 0.9;
@@ -928,39 +930,48 @@
         }
       }
 
-      // Single short "time's up" beep: a pure, sustained high tone, clearly different
-      // from the short percussive click. Its loudness follows the volume slider.
-      function playTimerBeep() {
+      // "Time's up" chime: two soft bell notes rising a fourth (G5 → C6), quick but gentle
+      // attack and a natural ~1 s fade. Lower and rounder than the old beep, and on different
+      // notes from the metronome clicks. Its loudness follows the volume slider.
+      const CHIME_NOTES = [
+        { freq: 783.99, delay: 0.00 },   // G5
+        { freq: 1046.50, delay: 0.16 }   // C6
+      ];
+      // Bell-like partials: [frequency ratio, relative level, decay time in seconds]
+      const CHIME_PARTIALS = [
+        [1.0, 1.0, 1.1],
+        [2.0, 0.32, 0.55],
+        [3.01, 0.12, 0.32],
+        [4.18, 0.06, 0.18]
+      ];
+
+      function playChimeNote(freq, t) {
+        const noteGain = audioCtx.createGain();
+        noteGain.gain.setValueAtTime(CHIME_DRIVE, t);
+        noteGain.connect(masterGainNode);
+
+        for (const [ratio, level, decay] of CHIME_PARTIALS) {
+          const osc = audioCtx.createOscillator();
+          const env = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq * ratio, t);
+          env.gain.setValueAtTime(0.0001, t);
+          env.gain.linearRampToValueAtTime(level, t + 0.008);          // soft, click-free attack
+          env.gain.exponentialRampToValueAtTime(0.0001, t + 0.008 + decay * 1.6);
+          osc.connect(env);
+          env.connect(noteGain);
+          osc.start(t);
+          osc.stop(t + 0.02 + decay * 1.6);
+        }
+      }
+
+      function playTimerChime() {
         ensureAudioContext();
         if (state.volume <= 0) return;
-        const t = audioCtx.currentTime + 0.02;
-        const length = 0.32;
-
-        const osc = audioCtx.createOscillator();
-        const overtone = audioCtx.createOscillator();
-        const overtoneGain = audioCtx.createGain();
-        const env = audioCtx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1975.5, t);        // B6
-        overtone.type = 'sine';
-        overtone.frequency.setValueAtTime(1975.5 * 2, t);
-        overtoneGain.gain.setValueAtTime(0.18, t);
-
-        env.gain.setValueAtTime(0.0001, t);
-        env.gain.linearRampToValueAtTime(BEEP_DRIVE, t + 0.006);
-        env.gain.setValueAtTime(BEEP_DRIVE, t + length - 0.04);
-        env.gain.exponentialRampToValueAtTime(0.0001, t + length);
-
-        osc.connect(env);
-        overtone.connect(overtoneGain);
-        overtoneGain.connect(env);
-        env.connect(masterGainNode);
-
-        osc.start(t);
-        overtone.start(t);
-        osc.stop(t + length + 0.02);
-        overtone.stop(t + length + 0.02);
+        const t = audioCtx.currentTime + 0.03;
+        for (const note of CHIME_NOTES) {
+          playChimeNote(note.freq, t + note.delay);
+        }
       }
 
       function stopTimerAlarm() {
@@ -986,7 +997,7 @@
         state.timerAlarmActive = true;
         updateTimerUI();
 
-        playTimerBeep();
+        playTimerChime();
 
         // Keep the visual alarm going for a few seconds (useful when muted), then reset.
         state.alarmTimeoutID = setTimeout(() => {
@@ -1319,11 +1330,17 @@
       }
 
       // --- Saved settings (restored the next time the app opens) ---
-      const SETTINGS_KEY = 'studioMetronome.settings.v1';
+      const SETTINGS_KEY = 'simpleMetronome.settings.v1';
+      const OLD_SETTINGS_KEY = 'studioMetronome.settings.v1'; // name used by earlier versions
       let saveTimeoutID = null;
 
       function loadSettings() {
         try {
+          // Carry settings saved under the old app name over to the new key (once)
+          if (localStorage.getItem(SETTINGS_KEY) === null && localStorage.getItem(OLD_SETTINGS_KEY) !== null) {
+            localStorage.setItem(SETTINGS_KEY, localStorage.getItem(OLD_SETTINGS_KEY));
+            localStorage.removeItem(OLD_SETTINGS_KEY);
+          }
           const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
           if (!saved || typeof saved !== 'object') return;
           const pick = (v, min, max, fallback) =>

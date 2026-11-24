@@ -1,5 +1,5 @@
 // Bump this version whenever the app's files change, so old caches get cleared.
-const CACHE_NAME = 'metronome-v9';
+const CACHE_NAME = 'metronome-v10';
 // Everything the app needs, so it runs fully offline once installed.
 const ASSETS = [
   './',
